@@ -1,0 +1,1 @@
+List the pages that link to a given page. Select with exactly one top-level title or page_id; limit defaults to 20 (max 100); continue with next_cursor. For pages that embed a template use get_transclusions.

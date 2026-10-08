@@ -1,0 +1,1 @@
+List a page's public revisions, newest first. Select with exactly one top-level title or page_id; user, start and end narrow by author and time; limit defaults to 20 (max 100). Continue with next_cursor. Use get_revision to read one revision.

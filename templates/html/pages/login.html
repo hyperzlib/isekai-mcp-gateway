@@ -1,0 +1,14 @@
+{{ template "layout/base" . }}
+{{ define "content" }}
+    <section class="hero">
+      <span class="hero-icon icon-accent" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></span>
+      <h1>{{.Title}}</h1>
+      <p class="subtitle">请先登录你的 Wiki 账号，随后选择允许这个应用使用的功能</p>
+    </section>
+    {{ template "partials/trusthint" . }}
+    <form method="post" class="actions">
+      <input type="hidden" name="csrf_token" value="{{.CSRF}}">
+      <button name="action" value="login">登录并继续</button>
+      {{if .Interaction}}<button class="secondary" name="action" value="cancel">取消</button>{{end}}
+    </form>
+{{ end }}

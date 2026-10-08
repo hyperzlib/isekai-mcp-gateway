@@ -1,0 +1,30 @@
+# 构建产物
+/bin/
+/*.exe
+*.exe~
+
+# Agents
+/.agents/
+
+# 运行时数据与日志
+/artifacts/
+/data/
+/config/data/
+
+# 缓存与临时文件
+/.cache/
+/.tmp/
+
+# 本地配置（含敏感信息，保留 example 文件）
+/config/server.json
+/config/app.json
+/config/development.env.ps1
+/config/certs/
+
+# 环境变量文件
+.env
+*.env
+
+# Go 工具链
+go.work
+go.work.sum

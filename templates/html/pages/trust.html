@@ -1,0 +1,25 @@
+{{ template "layout/base" . }}
+{{ define "content" }}
+    <section class="hero">
+      <span class="hero-icon icon-warning" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.2 5 6v5.5c0 4.3 2.9 8.1 7 9.3 4.1-1.2 7-5 7-9.3V6z"/><path d="M12 8.5v3.5"/><path d="M12 15.5h.01"/></svg></span>
+      <h1>{{.Title}}</h1>
+      <p class="subtitle">此应用正在请求连接你的账号</p>
+    </section>
+    {{ template "partials/trusthint" . }}
+    <div class="notice">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4 3.5 19a1.5 1.5 0 0 0 1.3 2.2h14.4A1.5 1.5 0 0 0 20.5 19z"/><path d="M12 10v4"/><path d="M12 17.5h.01"/></svg>
+      <p>你正在连接到第三方应用，请确认是你本人发起了这次连接。</p>
+    </div>
+    <details>
+      <summary>如何判断这次连接是否安全？</summary>
+      <div class="details-body">
+        <p>应用名称由应用自行提供，不能用来确认它的真实身份。本页面一般仅会在Agent应用（AI助手应用）中登录时弹出。</p>
+        {{if .Username}}<dl><dt>当前账号</dt><dd>{{.Username}}</dd></dl>{{end}}
+      </div>
+    </details>
+    <form method="post" class="actions">
+      <input type="hidden" name="csrf_token" value="{{.CSRF}}">
+      <button name="action" value="trust" data-countdown="{{.Countdown}}" {{if .Countdown}}disabled{{end}}>信任此应用并继续</button>
+      <button class="secondary" name="action" value="cancel">取消</button>
+    </form>
+{{ end }}

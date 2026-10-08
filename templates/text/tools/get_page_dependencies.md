@@ -1,0 +1,1 @@
+Return what a published page uses: its templates, links, images, categories and external links, parsed by type. Select with exactly one of title, page_id or revision_id; dependency_types selects types, all by default; limit defaults to 20 (max 100). For pages that embed this page use get_transclusions. Read wiki.help(reading).

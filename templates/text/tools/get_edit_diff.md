@@ -1,0 +1,1 @@
+Show the draft's diff. comparison=origin_to_edited compares the draft to its edit start; current_to_edited compares it to current upstream content and also needs expected_current_revision. Requires an open edit session from wiki.begin_edit or wiki.begin_create. Keep expected_version fixed across pages. Read wiki.help(recovery).

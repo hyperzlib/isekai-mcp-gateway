@@ -1,0 +1,27 @@
+{{ define "partials/management" }}
+    <section class="hero">
+      <span class="hero-icon icon-accent" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h11"/><path d="M8 12h11"/><path d="M8 18h11"/><path d="M4 6h.01"/><path d="M4 12h.01"/><path d="M4 18h.01"/></svg></span>
+      <h1>{{.Title}}</h1>
+      {{if .Username}}<p class="subtitle">账号：{{.Username}}</p>{{end}}
+    </section>
+    <details>
+      <summary>关于授权</summary>
+      <div class="details-body">
+        <p>撤销后，这个应用会立即失去访问你账号的权限。仅退出登录或删除应用，不会自动取消这里的授权。</p>
+      </div>
+    </details>
+    <nav class="tabs">
+      <a href="/auth/grants">管理授权</a>
+      <a href="/auth/clients">已信任的应用</a>
+    </nav>
+    <div class="entries">
+      {{range .Entries}}
+      <article class="entry">
+        <h2>{{.ClientName}}</h2>
+        {{if .Scope}}<p>{{.Scope}}</p>{{end}}
+        {{if .Expiry}}<p class="expiry">到期时间：{{.Expiry}}</p>{{end}}
+        <form method="post"><input type="hidden" name="csrf_token" value="{{$.CSRF}}"><input type="hidden" name="id" value="{{.ID}}"><button name="action" value="revoke" class="secondary">{{if eq $.Mode "clients"}}取消信任{{else}}撤销授权{{end}}</button></form>
+      </article>
+      {{else}}<p class="empty">暂无记录。</p>{{end}}
+    </div>
+{{ end }}

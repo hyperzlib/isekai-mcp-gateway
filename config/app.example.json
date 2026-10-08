@@ -1,0 +1,90 @@
+{
+  "$schema": "../docs/gateway-config.app.schema.json",
+  "configVersion": 1,
+  "site": {
+    "title": "Isekai MCP Gateway",
+    "iconUrl": ""
+  },
+  "auth": {
+    "oidc_client": {
+      "issuer": "https://sso.example.org/realms/isekai",
+      "clientId": "isekai-mcp-gateway",
+      "clientSecretEnv": "GATEWAY_OIDC_CLIENT_SECRET",
+      "redirectUri": "https://mcp.example.org/auth/oidc_client/callback",
+      "authorizationScopes": [
+        "openid",
+        "profile",
+        "email"
+      ],
+      "clientSecret": ""
+    },
+    "consent": {
+      "defaultSelectedScopes": [
+        "mcp:access"
+      ]
+    }
+  },
+  "mediawiki": {
+    "siteId": "isekai",
+    "apiUrl": "https://wiki.example.org/api.php",
+    "timeoutMs": 15000,
+    "maxlagSeconds": 5,
+    "pageCacheTtlSeconds": 600,
+    "serviceBridge": {
+      "keyId": "gateway-current",
+      "secretEnv": "ISEKAI_SERVICE_BRIDGE_SECRET",
+      "secret": ""
+    }
+  },
+  "editing": {
+    "sessionTtlSeconds": 3600,
+    "maxActiveSessionsPerUser": 1000,
+    "maxContentBytes": 16777216,
+    "maxOperations": 64
+  },
+  "uploads": {
+    "uploadTaskTtlSeconds": 600,
+    "resultRetentionSeconds": 3600,
+    "maxFileBytes": 67108864,
+    "maxActiveTicketsPerPrincipal": 10,
+    "maxReservedBytesPerPrincipal": 268435456,
+    "maxReservedBytesGlobal": 1073741824,
+    "tempPath": "./data/uploads",
+    "allowedMimeTypes": [
+      "image/png",
+      "image/jpeg",
+      "image/webp",
+      "image/gif",
+      "image/svg+xml",
+      "application/pdf"
+    ],
+    "stagedFileTtlSeconds": 600
+  },
+  "results": {
+    "defaultTextMaxBytes": 65536,
+    "maxPreviewBytes": 4194304
+  },
+  "additions": {
+    "foreignPageConfirmation": {
+      "exemption": "has_edited",
+      "operations": [
+        "commit",
+        "move",
+        "delete",
+        "uploadOverwrite"
+      ],
+      "challengeTtlSeconds": 600,
+      "policyVersion": 1
+    },
+    "aiRevisionTags": {
+      "mapping": {
+        "ai_organized": "ai-organized",
+        "ai_assisted": "ai-assisted",
+        "ai_generated": "ai-generated"
+      }
+    }
+  },
+  "logging": {
+    "level": "info"
+  }
+}

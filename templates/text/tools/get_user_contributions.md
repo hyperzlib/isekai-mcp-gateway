@@ -1,0 +1,1 @@
+List a user's published contributions on this wiki. Supply exactly one of user_id or username, plus optional limit (default 20, max 100), cursor, start, end (RFC3339 with timezone), direction (older by default), namespaces, show and tag. Pending moderation revisions are excluded. Read wiki.help(activity).

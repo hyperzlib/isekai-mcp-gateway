@@ -1,0 +1,70 @@
+{
+  "$schema": "../docs/gateway-config.server.schema.json",
+  "configVersion": 1,
+  "server": {
+    "host": "127.0.0.1",
+    "port": 3000,
+    "publicUrl": "https://mcp.example.org",
+    "allowedHosts": [
+      "mcp.example.org"
+    ],
+    "allowedOrigins": [],
+    "requestBodyMaxBytes": 2097152,
+    "tls": {
+      "enabled": false,
+      "certFile": "",
+      "keyFile": ""
+    }
+  },
+  "auth": {
+    "gateway": {
+      "issuer": "https://mcp.example.org",
+      "resource": "https://mcp.example.org/mcp",
+      "accessTokenFormat": "opaque",
+      "authorizationCodeTtlSeconds": 60,
+      "accessTokenTtlSeconds": 300,
+      "interactionTtlSeconds": 600,
+      "refreshTokenIdleTtlSeconds": 604800,
+      "grantMaxTtlSeconds": 2592000,
+      "cookieSecretEnv": "GATEWAY_OAUTH_COOKIE_SECRET",
+      "storageEncryptionKeyEnv": "GATEWAY_OAUTH_STORAGE_KEY",
+      "signingJwksEnv": "GATEWAY_OAUTH_SIGNING_JWKS",
+      "registration": {
+        "cimd": true,
+        "dynamic": true,
+        "preRegisteredClients": [],
+        "maxClients": 10000,
+        "idleClientTtlSeconds": 2592000
+      },
+      "metadataFetch": {
+        "timeoutMs": 5000,
+        "maxBytes": 65536,
+        "maxRedirects": 2
+      },
+      "cookieSecret": "",
+      "storageEncryptionKey": "",
+      "signingJwks": null
+    }
+  },
+  "storage": {
+    "driver": "mysql",
+    "host": "127.0.0.1",
+    "port": 3306,
+    "database": "isekai_mcp_gateway",
+    "username": "isekai_mcp_gateway",
+    "passwordEnv": "GATEWAY_DB_PASSWORD",
+    "poolSize": 10,
+    "tls": {
+      "enabled": false
+    },
+    "password": ""
+  },
+  "extensions": {
+    "IsekaiLitePageACL": {
+      "enabled": true
+    },
+    "Moderation": {
+      "enabled": true
+    }
+  }
+}

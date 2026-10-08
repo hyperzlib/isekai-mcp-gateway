@@ -1,0 +1,1 @@
+Publish the file staged by prepare_upload. If warnings are returned, display them and confirm in a separate call passing the exact warning keys as confirmed_warnings. When the result is unknown the file cannot be published again; query the ticket state via prepare_upload(retry_upload_id). Requires wiki:read and wiki:upload. Read wiki.help(uploads).

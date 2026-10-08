@@ -1,0 +1,1 @@
+List the current pages that transclude (embed) a page or template. Supply exactly one top-level title or page_id; filter with namespaces; limit defaults to 20 (max 100). This is a live list, not a historical snapshot. Read wiki.help(reading).

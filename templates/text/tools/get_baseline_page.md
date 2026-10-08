@@ -1,0 +1,2 @@
+Return a page's current public content, as source or html, ignoring any pending revision of your own. Select with exactly one top-level title or page_id; follow_redirects defaults to false. Use get_latest_page for the latest visible content. Keep title/page_id, format, limit and follow_redirects unchanged across next_cursor pages. Read wiki.help(reading).
+For format=source, file_urls maps 文件: titles used by the complete page (including templates) to original file URLs. It is separate from editable content and stays fixed across cursor pages; unavailable files are omitted.

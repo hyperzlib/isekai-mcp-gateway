@@ -1,0 +1,1 @@
+Read a template's TemplateData parameter metadata. Supply exactly one top-level title or page_id, optionally language. When no TemplateData exists it returns has_template_data=false and data=null; never infer parameters from wikitext. Read wiki.help(reading).

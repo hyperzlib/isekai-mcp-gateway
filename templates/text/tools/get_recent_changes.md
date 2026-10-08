@@ -1,0 +1,1 @@
+List recent changes on this wiki. Optionally filter by exactly one of user_id or username; also limit (default 20, max 100), cursor, start, end, direction, namespaces, show, tag and types (default edit and new; add log for moves, deletes and uploads). Bounded by the wiki's retention window. Read wiki.help(activity).

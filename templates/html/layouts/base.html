@@ -1,0 +1,20 @@
+{{ define "layout/base" }}
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{.Title}}</title>
+  <link rel="stylesheet" href="/assets/auth/style.css">
+  <script src="/assets/auth/auth.js" defer></script>
+</head>
+<body>
+  <header class="page-head">
+    {{ template "partials/brand" . }}
+  </header>
+  <main class="card">
+    {{ block "content" . }}{{ end }}
+  </main>
+</body>
+</html>
+{{ end }}

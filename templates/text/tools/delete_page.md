@@ -1,0 +1,1 @@
+Delete a page. Identify it with page: {page_id or title}; reason is required. If a confirmation challenge is returned, confirm it in a separate call with challenge_responses. Read wiki.help(confirmation).

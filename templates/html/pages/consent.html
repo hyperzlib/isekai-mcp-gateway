@@ -1,0 +1,24 @@
+{{ template "layout/base" . }}
+{{ define "content" }}
+    <section class="hero">
+      <span class="hero-icon icon-accent" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="m8.5 12 2.5 2.5 5-6"/></svg></span>
+      <h1>{{.Title}}</h1>
+      <p class="subtitle">勾选允许此应用使用的功能，未勾选的操作将被拒绝</p>
+    </section>
+    {{ template "partials/trusthint" . }}
+    <form method="post" id="consent">
+      <input type="hidden" name="csrf_token" value="{{.CSRF}}">
+      <div class="scopes">
+        {{range .Scopes}}
+        <div class="scope">
+          <label class="scope-main"><input type="checkbox" name="scope" value="{{.Name}}"{{if or .Checked .Force}} checked{{end}}{{if .Force}} disabled{{end}}><span class="scope-label">{{.Label}}</span></label>
+          {{if .Description}}<span class="info" tabindex="0" role="note" data-tip="{{.Description}}" aria-label="{{.Description}}">i</span>{{end}}
+        </div>
+        {{end}}
+      </div>
+      <div class="actions">
+        <button name="action" value="consent">同意并连接</button>
+        <button class="secondary" name="action" value="cancel">取消</button>
+      </div>
+    </form>
+{{ end }}

@@ -1,0 +1,1 @@
+Return a published page's section directory only: index, heading, level and anchor, not the prose. Select with exactly one of title, page_id or revision_id; limit defaults to 20 (max 100). Sections that come from templates belong to another page. Read wiki.help(reading).

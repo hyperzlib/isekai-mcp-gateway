@@ -1,0 +1,1 @@
+List your own published contributions. The user is taken from the authenticated connection; do not pass user_id or username. Accepts the same filters as get_user_contributions: limit (default 20, max 100), cursor, start, end, direction, namespaces, show and tag. Pending moderation revisions are excluded. Read wiki.help(activity).

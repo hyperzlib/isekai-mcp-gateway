@@ -1,0 +1,1 @@
+Synchronize the draft with current visible content and refresh its baseline; does not submit to the wiki. Requires an open edit session from wiki.begin_edit or wiki.begin_create and base_version. Every upstream difference is written as conflict blocks in the draft; resolve them with update_edit, then commit. Read wiki.help(recovery).

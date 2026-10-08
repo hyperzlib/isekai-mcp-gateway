@@ -1,0 +1,1 @@
+Search the draft by literal text or linear-time regex, one line at a time; returns bounded matches and a version-bound cursor. Requires an open edit session from wiki.begin_edit or wiki.begin_create. Read wiki.help(editing).

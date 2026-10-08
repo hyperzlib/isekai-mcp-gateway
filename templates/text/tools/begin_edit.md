@@ -1,0 +1,1 @@
+Open an edit draft on an existing page and return edit_id, version and expires_at. Use this tool to create the edit draft as the first step of any page modification. Pass the returned version as base_version in later calls. Requires wiki:edit. Then read the draft with get_edit_content, change it with update_edit and submit with commit_edit. Read wiki.help(editing).

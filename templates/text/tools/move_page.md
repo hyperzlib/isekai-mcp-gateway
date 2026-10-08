@@ -1,0 +1,1 @@
+Rename a page. Identify it with page: {page_id or title}; to_title is the new title and reason is required. May create a redirect. If a confirmation challenge is returned, confirm it in a separate call with challenge_responses. Read wiki.help(confirmation).

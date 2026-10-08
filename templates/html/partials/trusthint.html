@@ -1,0 +1,7 @@
+{{ define "partials/trusthint" }}
+    {{ if eq .TrustLevel "known" }}
+    <p class="trust-note trust-note-known">连接到已知客户端一般是安全的，请确保你从官方来源安装，并且应用名称与上方显示的一致。</p>
+    {{ else if eq .TrustLevel "unknown" }}
+    <p class="trust-note trust-note-unknown">此客户端未经过管理员确认，请确保你信任此客户端，且从官方来源安装</p>
+    {{ end }}
+{{ end }}

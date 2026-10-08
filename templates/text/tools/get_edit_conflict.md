@@ -1,0 +1,1 @@
+List the conflict ranges currently in the draft. Requires an open edit session from wiki.begin_edit or wiki.begin_create. Use it after pull_edit or when get_edit_status reports conflicts, then resolve with update_edit. Read wiki.help(recovery).
