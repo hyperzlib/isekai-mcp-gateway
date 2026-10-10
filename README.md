@@ -14,6 +14,15 @@ OAuth 注册复用、指纹算法、存储拆分及迁移注意事项见 [OAuth 
 
 以下命令在项目根目录执行。初始配置文件已生成；再次执行 `init-dev` 会拒绝覆盖。
 
+使用 PowerShell 脚本按 `系统-arch` 编译，产物位于 `bin/<系统-arch>/gateway`（Windows 为 `gateway.exe`）：
+
+```powershell
+./make.ps1 windows-amd64
+./make.ps1 linux-arm64
+```
+
+脚本使用 `CGO_ENABLED=0`，目标组合由当前 Go 工具链校验，也可从其他目录通过脚本路径调用。
+
 ```powershell
 $env:CGO_ENABLED = '0'
 go build -o bin/gateway.exe ./cmd/gateway
@@ -106,11 +115,10 @@ Windows 文件权限由目录 ACL 决定；部署时限制服务配置目录的�
 }
 ```
 
-## Help 和 Hello World
+## Help
 
-`wiki.help` 接受 `{ "topic": "index" }`，topic 可省略；可用主题为 index、connection、authorization、helloworld。
+`wiki.help` 接受 `{ "topic": "index" }`，topic 可省略；可用主题通过 index 查看。
 `wiki://help/index` 和 `wiki://help/{topic}` 返回同源 Markdown。
-`wiki.helloworld` 接受 `{}` 或 `{ "name": "Isekai" }`，返回 text 和 structuredContent，默认 `Hello, world!`。
 
 ## 热重载与健康检查
 
@@ -124,7 +132,11 @@ Windows 文件权限由目录 ACL 决定；部署时限制服务配置目录的�
 - `gateway write-schema`：从 Go 配置类型生成两个 JSON Schema。
 
 反向代理需保留公开 Host，关闭 `/mcp` 响应缓冲并支持 SSE，代理访问日志也需去除 OAuth 敏感查询参数。
-Gateway 日志不记录 URL、query、请求体、Authorization、cookie；provider 的原始错误文本仅在 `logging.level` 为 `debug`/`trace` 时记录。
+默认 HTTP 日志仅记录路由、状态和耗时。`logging.traceRequest` 默认为 `false`，支持热更新；设为 `true` 并将 `logging.level` 设为 `debug` 或 `trace` 时，以 DEBUG 输出 HTTP 请求 URL、完整请求头、下游读取的请求体、响应状态、完整响应头及响应体，不进行脱敏。请求与响应通过 `request_id` 关联；流式响应持续透传，在处理结束后输出响应体。provider 的原始错误文本仅在 `logging.level` 为 `debug`/`trace` 时记录。
+
+`app.json` 的 `logging.consoleFormat` 默认为 `text`，也可设为 `json`。TRACE、DEBUG、INFO 输出到 stdout，WARN 和 ERROR 输出到 stderr；业务错误仍按错误分类和日志级别过滤。
+
+`logging.file.enabled` 默认为 `false`。启用后同时追加写入 JSON Lines 文件：`split: true` 将普通日志写入 `path`（默认 `./logs/log.jsonl`），将 WARN 和 ERROR 写入 `errorPath`（默认 `./logs/error.jsonl`）；`split: false` 将所有日志写入 `path`。相对路径基于进程工作目录，缺失的目录会自动创建。文件打开失败会阻止启动，运行时写入失败会报告到控制台。日志级别支持热更新，格式、文件路径及拆分方式变更需要重启。当前文件采用追加写入，需由部署环境安排轮转和清理。
 
 ## 验证状态
 

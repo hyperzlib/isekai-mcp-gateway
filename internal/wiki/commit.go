@@ -252,7 +252,7 @@ func (s *Service) Commit(ctx context.Context, c *Call, i Input) (Object, error) 
 		}
 	}
 	// 组装返回结果：nochange 时 revision 回退为基线，页面 ID 缺失时沿用草稿值
-	result := Object{"edit_id": edit.ID, "outcome": outcome, "changed": changed, "revision_id": nil, "content_source": "baseline", "version": edit.Version + 1}
+	result := Object{"edit_id": edit.ID, "outcome": outcome, "url": edit.URL, "changed": changed, "revision_id": nil, "content_source": "baseline", "version": edit.Version + 1}
 	revision := number(ed["newrevid"])
 	if !changed && revision == 0 {
 		revision = edit.BaseRevisionID
@@ -303,9 +303,35 @@ func (s *Service) Commit(ctx context.Context, c *Call, i Input) (Object, error) 
 	if x != nil {
 		return nil, x
 	}
+	// The confirmed write is durable before this optional metadata refresh.
+	pageURL, urlErr := s.pageURL(ctx, c, PageRef{PageID: pageID, Title: str(result["title"])})
+	if urlErr != nil {
+		result["url_refresh_warning"] = Object{"code": "URL_REFRESH_FAILED", "message": "Wiki accepted the submission, but the page URL could not be refreshed. Do not resubmit; use wiki.pull_edit for an open session."}
+	} else {
+		result["url"] = pageURL
+	}
+	// Persist refreshed metadata for idempotent reads of this submission.
+	x = s.Repo.tx(context.WithoutCancel(ctx), func(db *gorm.DB) error {
+		var a Attempt
+		row, err := s.Repo.load(db, "commit_attempts", attemptID, &a, true)
+		if err != nil {
+			return err
+		}
+		a.Result = result
+		return s.Repo.save(db, "commit_attempts", row, a, false)
+	})
+	if x != nil {
+		_ = s.complete(ctx, edit, func(e *Edit) error {
+			e.State = "unsync"
+			e.Error = sessionError("saved_sync_failed", "Wiki saved the edit, but local URL synchronization failed.")
+			return nil
+		})
+		return nil, x
+	}
 	// 非待审核编辑若缺少 revision 或 pageID，说明基线同步不完整
 	syncFailed := !pending && (revision <= 0 || pageID <= 0)
 	x = s.complete(ctx, edit, func(e *Edit) error {
+		e.URL = str(result["url"])
 		if syncFailed {
 			e.State = "unsync"
 			e.Error = sessionError("saved_sync_failed", "Wiki confirmed saving, but the public baseline is incomplete.")
@@ -427,6 +453,7 @@ func (s *Service) Pull(ctx context.Context, c *Call, i Input) (Object, error) {
 		edit.Marker = marker
 		edit.PageID = id
 		edit.Title = str(v["title"])
+		edit.URL = str(v["url"])
 		edit.BaseRevisionID = number(v["baseline_revision_id"])
 		if edit.ModerationBaseRevisionID != nil {
 			n := number(v["temp_revision_id"])

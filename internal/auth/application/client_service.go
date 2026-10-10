@@ -78,6 +78,14 @@ func (s *Service) validateClient(c *Client, public bool) error {
 	// 归一化并校验请求的 scope，offline_access 必须搭配 refresh_token 授权。
 	if c.Scope == "" {
 		c.Scope = "mcp:access"
+		if public {
+			// DCR 缺省允许基础 scope；实际授予范围由授权请求决定。
+			basic := BasicScopes()
+			if !slices.Contains(c.Grants, "refresh_token") {
+				basic = slices.DeleteFunc(basic, func(scope string) bool { return scope == "offline_access" })
+			}
+			c.Scope += " " + strings.Join(basic, " ")
+		}
 	}
 	scopes, err := NormalizeScopes(strings.Fields(c.Scope), BusinessScopes())
 	if err != nil {

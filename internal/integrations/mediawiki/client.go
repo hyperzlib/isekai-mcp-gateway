@@ -1,6 +1,7 @@
 package mediawiki
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -44,11 +45,31 @@ func (c *Client) Resolve(ctx context.Context, sub string) (Identity, error) {
 	if err = servicebridge.Sign(req, []byte(body), c.Config.Bridge.KeyID, c.Secret); err != nil {
 		return Identity{}, failure.Wrap("wiki.identity.prepare", err)
 	}
+	// traceFailed 在身份解析失败时记录脱敏后的请求与 MediaWiki API 响应，
+	// request_id 与错误页展示的错误编号一致，便于关联排查。
+	traceFailed := func(err error, status int, response []byte) {
+		failure.TraceUpstream(ctx, "wiki.identity.request", failure.UpstreamTrace{
+			Method:         req.Method,
+			URL:            req.URL.String(),
+			RequestHeaders: failure.FormatRequestHeaders(req, "Signature", "Authorization", "X-Isekai-User-Token", "Cookie"),
+			RequestBody:    body,
+			Status:         status,
+			ResponseBody:   failure.ClipResponseBody(response),
+		}, err)
+	}
 	res, err := c.HTTP.Do(req)
 	if err != nil {
-		return Identity{}, failure.Dependency("wiki.identity.request", err)
+		err = failure.Dependency("wiki.identity.request", err)
+		traceFailed(err, 0, nil)
+		return Identity{}, err
 	}
 	defer res.Body.Close()
+	data, err := io.ReadAll(io.LimitReader(res.Body, 65537))
+	if err != nil {
+		err = failure.Dependency("wiki.identity.decode", err)
+		traceFailed(err, res.StatusCode, nil)
+		return Identity{}, err
+	}
 	var v struct {
 		Gateway struct {
 			User Identity `json:"userinfo"`
@@ -59,25 +80,34 @@ func (c *Client) Resolve(ctx context.Context, sub string) (Identity, error) {
 	}
 	// 上游非 200 归类为上游错误，429/5xx 可重试
 	if res.StatusCode != 200 {
-		return Identity{}, &failure.Error{Code: failure.Upstream, Message: "Wiki 身份服务请求失败。", Op: "wiki.identity.response", Retryable: res.StatusCode == 429 || res.StatusCode >= 500, UpstreamStatus: res.StatusCode}
+		err = &failure.Error{Code: failure.Upstream, Message: "Wiki 身份服务请求失败。", Op: "wiki.identity.response", Retryable: res.StatusCode == 429 || res.StatusCode >= 500, UpstreamStatus: res.StatusCode}
+		traceFailed(err, res.StatusCode, data)
+		return Identity{}, err
 	}
-	if err := decodeResponse(res.Body, &v); err != nil {
-		return Identity{}, failure.Dependency("wiki.identity.decode", err)
+	if err := decodeResponse(bytes.NewReader(data), &v); err != nil {
+		err = failure.Dependency("wiki.identity.decode", err)
+		traceFailed(err, res.StatusCode, data)
+		return Identity{}, err
 	}
 	if v.Error != nil {
-		return Identity{}, identityError(v.Error.Code)
+		err := identityError(v.Error.Code)
+		traceFailed(err, res.StatusCode, data)
+		return Identity{}, err
 	}
 
 	// 用户信息字段必须完整
 	out := v.Gateway.User
 	if out.UserID <= 0 || out.UserToken == "" || out.Username == "" {
-		return Identity{}, failure.New(failure.Upstream, "Wiki 身份服务返回的用户信息不完整。", "wiki.identity.validate", nil)
+		err := failure.New(failure.Upstream, "Wiki 身份服务返回的用户信息不完整。", "wiki.identity.validate", nil)
+		traceFailed(err, res.StatusCode, data)
+		return Identity{}, err
 	}
 	return out, nil
 }
 
 // decodeResponse enforces the byte limit on the entire response, not only a
-// successfully decoded JSON prefix. Never retain or expose upstream payloads.
+// successfully decoded JSON prefix。身份载荷仅用于解析不进入错误对象；
+// 失败的响应体由调用方截断后经 failure 的脱敏日志输出。
 func decodeResponse(body io.Reader, value any) error {
 	// 多读 1 字节以检测越过上限的响应
 	data, err := io.ReadAll(io.LimitReader(body, 65537))

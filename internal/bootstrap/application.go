@@ -7,10 +7,10 @@ import (
 	"isekai-mcp-gateway/internal/auth/resource"
 	"isekai-mcp-gateway/internal/auth/web"
 	"isekai-mcp-gateway/internal/config"
+	"isekai-mcp-gateway/internal/home"
 	"isekai-mcp-gateway/internal/httpserver"
 	"isekai-mcp-gateway/internal/httpserver/health"
 	gatewaymcp "isekai-mcp-gateway/internal/mcp"
-	"isekai-mcp-gateway/internal/mcp/modules/hello"
 	"isekai-mcp-gateway/internal/mcp/modules/help"
 	"isekai-mcp-gateway/internal/mcp/modules/logout"
 	"isekai-mcp-gateway/internal/mcp/modules/me"
@@ -32,7 +32,7 @@ func assemble(c *config.Config, a *zitadel.Service, files *runtimefiles.Files, b
 	authorizer := &gatewaymcp.Authenticator{Service: a.Service}
 
 	// 汇集所有 MCP 模块的工具定义
-	definitions := append(help.Module(authorizer, files.Templates), hello.Module(authorizer)...)
+	definitions := help.Module(authorizer, files.Templates)
 	definitions = append(definitions, logout.Module(authorizer)...)
 	definitions = append(definitions, me.Module(authorizer)...)
 	definitions = append(definitions, wikiread.Module(business)...)
@@ -47,6 +47,12 @@ func assemble(c *config.Config, a *zitadel.Service, files *runtimefiles.Files, b
 	// 就绪探测同时检查依赖健康与出站配置是否已加载
 	status := &health.Handler{Dependencies: a.Service, OutboundReady: func() bool { return a.Upstream.Get() != nil }}
 	server := httpserver.New(c, a, resourceServer, business,
+		&home.Service{Config: c, Pages: files.Templates, Site: func() (string, string) {
+			if bundle := a.Upstream.Get(); bundle != nil && bundle.Config != nil {
+				return bundle.Config.App.Site.Title, bundle.Config.App.Site.IconURL
+			}
+			return c.App.Site.Title, c.App.Site.IconURL
+		}},
 		routeFunc(func(r chi.Router) { pages.Routes(r) }), files.Assets,
 		&gatewaymcp.Transport{Handler: resourceServer.Bearer(gatewaymcp.BearerMetadata(c.Static.Auth.Gateway.Issuer, stream))}, status)
 	server.MCP = stream

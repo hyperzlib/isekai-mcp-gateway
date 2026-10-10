@@ -32,6 +32,7 @@ func (s *Service) snapshotQuery(ctx context.Context, c *Call, p PageRef, follow 
 	q := url.Values(params)
 	q.Set("action", "query")
 	q.Set("prop", "info|revisions")
+	q.Set("inprop", "url")
 	q.Set("rvprop", "ids|timestamp|content|contentmodel")
 	q.Set("rvslots", "main")
 	q.Set("rvlimit", "1")
@@ -74,6 +75,10 @@ func (s *Service) snapshotQuery(ctx context.Context, c *Call, p PageRef, follow 
 	out := Object{"page_id": nil, "title": pg["title"], "requested_title": p.Title, "baseline_exists": id > 0, "baseline_revision_id": nil, "revision_id": nil, "content_source": "empty", "content": "", "content_hash": nil}
 	if p.Title == "" {
 		delete(out, "requested_title")
+	}
+	out["url"] = ""
+	if id > 0 {
+		out["url"] = str(pg["fullurl"])
 	}
 	out["redirect_chain"] = []any{}
 	if redirects, ok := object(v["query"])["redirects"].([]any); ok {

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"gorm.io/gorm"
 	"io"
+	"isekai-mcp-gateway/internal/failure"
 	"os"
 	"time"
 )
@@ -241,7 +242,9 @@ func (s *Service) RunCleanup(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			_ = s.Cleanup(ctx)
+			if err := s.Cleanup(ctx); err != nil {
+				failure.Log(ctx, "wiki.cleanup", failure.Wrap("wiki.cleanup", err))
+			}
 		}
 	}
 }

@@ -56,7 +56,7 @@ func TestPageContinuationCacheRefreshExpiryAndAccess(t *testing.T) {
 				if !readable {
 					actions["read"] = []any{Object{"code": "permissiondenied"}}
 				}
-				return Object{"query": Object{"pages": []any{Object{"pageid": 3, "title": "Page", "actions": actions,
+				return Object{"query": Object{"pages": []any{Object{"pageid": 3, "title": "Page", "fullurl": "https://wiki.test/wiki/Page", "actions": actions,
 					"revisions": []any{revision}, "isekaiuseredited": Object{"has_edited": 1}}}}}
 			})
 			input := Input{Title: "Page", Format: format, Limit: 3}
@@ -67,11 +67,17 @@ func TestPageContinuationCacheRefreshExpiryAndAccess(t *testing.T) {
 			if len(*requests) != 2 || !strings.Contains((*requests)[0].Get("prop"), "isekaiuseredited") {
 				t.Fatalf("unmerged first read: %v", *requests)
 			}
+			if first["url"] != "https://wiki.test/wiki/Page" || (*requests)[0].Get("inprop") != "url" {
+				t.Fatal("missing page URL")
+			}
 			input.Cursor = str(first["next_cursor"])
 			before := parses
 			second, err := s.Read(context.Background(), c, "get_latest_page", input)
 			if err != nil || number(second["offset"]) != 3 || fullReads != 1 || parses != before || checks != 1 {
 				t.Fatalf("cached continuation: %#v %v, reads=%d parses=%d checks=%d", second, err, fullReads, parses, checks)
+			}
+			if second["url"] != first["url"] {
+				t.Fatal("continuation lost URL")
 			}
 			// Access revocation and revision hiding are checked even on a cache hit.
 			readable = false

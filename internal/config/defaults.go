@@ -39,5 +39,9 @@ func Defaults() *Config {
 	c.App.Additions.Foreign.Version = 1
 	c.App.Additions.Tags.Mapping = map[string]string{"ai_organized": "ai-organized", "ai_assisted": "ai-assisted", "ai_generated": "ai-generated"}
 	c.App.Logging.Level = "info"
+	c.App.Logging.ConsoleFormat = "text"
+	c.App.Logging.File.Path = "./logs/log.jsonl"
+	c.App.Logging.File.ErrorPath = "./logs/error.jsonl"
+	c.App.Logging.File.Split = true
 	return c
 }

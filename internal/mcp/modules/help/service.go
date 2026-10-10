@@ -40,7 +40,7 @@ func (s *Service) Read(topic string) (domain.Result, error) {
 
 	var body bytes.Buffer
 	features := []string{
-		"oauth", "help", "helloworld", "logout", "me", "wikitext", "apply-patch",
+		"oauth", "help", "logout", "me", "wikitext", "apply-patch",
 		"wiki-read", "wiki-activity", "wiki-edit", "wiki-mutation", "uploads",
 	}
 	if cfg != nil && cfg.Static.Extensions.Moderation.Enabled {
@@ -49,7 +49,7 @@ func (s *Service) Read(topic string) (domain.Result, error) {
 	if cfg != nil && cfg.Static.Extensions.ACL.Enabled {
 		features = append(features, "page-acl")
 	}
-	operations := strings.Fields("wiki.help wiki.helloworld wiki.logout wiki.me wiki.get_latest_page wiki.get_baseline_page wiki.search wiki.get_history wiki.get_revision wiki.compare_revisions wiki.get_backlinks wiki.list_category wiki.get_user wiki.begin_edit wiki.begin_create wiki.list_edits wiki.get_edit_status wiki.get_edit_content wiki.search_edit_content wiki.update_edit wiki.preview_edit wiki.get_edit_diff wiki.get_edit_conflict wiki.commit_edit wiki.pull_edit wiki.close_edit wiki.move_page wiki.delete_page wiki.prepare_upload wiki.commit_upload")
+	operations := strings.Fields("wiki.help wiki.logout wiki.me wiki.get_latest_page wiki.get_baseline_page wiki.search wiki.get_history wiki.get_revision wiki.compare_revisions wiki.get_backlinks wiki.list_category wiki.get_user wiki.begin_edit wiki.begin_create wiki.list_edits wiki.get_edit_status wiki.get_edit_content wiki.search_edit_content wiki.update_edit wiki.preview_edit wiki.get_edit_diff wiki.get_edit_conflict wiki.commit_edit wiki.pull_edit wiki.close_edit wiki.move_page wiki.delete_page wiki.prepare_upload wiki.commit_upload")
 	operations = append(operations,
 		"wiki.get_file_urls",
 		"wiki.get_user_contributions", "wiki.get_my_contributions", "wiki.get_recent_changes",

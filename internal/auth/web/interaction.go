@@ -20,8 +20,12 @@ func (s *Service) Interaction(w http.ResponseWriter, r *http.Request) {
 		s.flowError(w, r, err)
 		return
 	}
-	if a.Browser != browser || row.State == "consumed" || row.State == "code" || row.State == "consented" {
-		s.pageErrorContext(r.Context(), w, "这次连接已失效或已完成，请重新发起。", 400)
+	if a.Browser != browser {
+		s.flowError(w, r, &application.FlowError{Code: "INVALID_INTERACTION", Message: "本次授权不属于当前浏览器会话，请在发起连接的浏览器中继续，或返回应用重新发起连接。", Status: 400})
+		return
+	}
+	if row.State == "consumed" || row.State == "code" || row.State == "consented" {
+		s.flowError(w, r, &application.FlowError{Code: "INVALID_INTERACTION", Message: "本次授权已完成，请返回应用查看连接结果。如需再次授权，请从应用重新发起连接。", Status: 400})
 		return
 	}
 

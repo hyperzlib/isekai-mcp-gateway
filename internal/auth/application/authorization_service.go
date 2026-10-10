@@ -42,15 +42,24 @@ func (s *Service) ConfirmTrust(ctx context.Context, a *Interaction, c *Client) e
 		}
 		// 交互记录的客户端指纹必须与当前客户端一致。
 		if client.Fingerprint != a.ClientFingerprint {
-			return &FlowError{Code: "INVALID_INTERACTION", Message: "这次连接已失效或尚未准备完成，请重新发起。", Status: 400}
+			return interactionError("应用的连接配置已变更，本次授权无法继续。请返回应用重新发起连接。")
 		}
 		fresh, ar, err := s.LoadInteraction(tx, a.ID, true)
 		if err != nil {
 			return lookupError(err, domain.ErrInvalidGrant())
 		}
 		// 必须已完成认证，且信任倒计时已结束。
-		if ar.State != "authenticated" || fresh.AccountID != a.AccountID || fresh.TrustAfter.IsZero() || time.Now().Before(fresh.TrustAfter) {
-			return &FlowError{Code: "INVALID_INTERACTION", Message: "这次连接已失效或尚未准备完成，请重新发起。", Status: 400}
+		if ar.State != "authenticated" {
+			return interactionError("本次授权当前无法确认信任，请刷新页面并完成登录后重试。")
+		}
+		if fresh.AccountID != a.AccountID {
+			return interactionError("本次授权的登录账号已变化。请返回应用重新发起连接。")
+		}
+		if fresh.TrustAfter.IsZero() {
+			return interactionError("应用信任确认尚未开始，请刷新页面后重新确认。")
+		}
+		if time.Now().Before(fresh.TrustAfter) {
+			return interactionError("应用信任确认的等待时间尚未结束，请等待倒计时结束后再次确认。")
 		}
 		// 首次信任时把 pending 客户端提升为 active。
 		if cr.State == "pending" {
@@ -86,15 +95,21 @@ func (s *Service) Consent(ctx context.Context, a *Interaction, c *Client, reques
 		if err != nil {
 			return lookupError(err, domain.ErrInvalidGrant())
 		}
-		if cr.State != "active" || client.Fingerprint != a.ClientFingerprint {
-			return &FlowError{Code: "INVALID_INTERACTION", Message: "这次连接已失效或尚未准备完成，请重新发起。", Status: 400}
+		if cr.State != "active" {
+			return interactionError("应用尚未激活，请刷新页面并完成应用信任确认后重试。")
+		}
+		if client.Fingerprint != a.ClientFingerprint {
+			return interactionError("应用的连接配置已变更，本次授权无法继续。请返回应用重新发起连接。")
 		}
 		fresh, ar, err := s.LoadInteraction(tx, a.ID, true)
 		if err != nil {
 			return lookupError(err, domain.ErrInvalidGrant())
 		}
-		if ar.State != "authenticated" || fresh.AccountID != a.AccountID {
-			return &FlowError{Code: "INVALID_INTERACTION", Message: "这次连接已失效或尚未准备完成，请重新发起。", Status: 400}
+		if ar.State != "authenticated" {
+			return interactionError("本次授权当前无法提交权限确认，请刷新页面并完成登录后重试。")
+		}
+		if fresh.AccountID != a.AccountID {
+			return interactionError("本次授权的登录账号已变化。请返回应用重新发起连接。")
 		}
 		// 客户端必须已被该账号信任。
 		Trusted, err := s.Trusted(tx, a.AccountID, client)
@@ -102,7 +117,7 @@ func (s *Service) Consent(ctx context.Context, a *Interaction, c *Client, reques
 			return lookupError(err, domain.ErrInvalidGrant())
 		}
 		if !Trusted {
-			return &FlowError{Code: "INVALID_INTERACTION", Message: "这次连接已失效或尚未准备完成，请重新发起。", Status: 400}
+			return interactionError("你尚未确认信任此应用，请刷新页面并完成应用信任确认后重试。")
 		}
 		// 会话必须仍然有效。
 		var session Session
@@ -111,7 +126,7 @@ func (s *Service) Consent(ctx context.Context, a *Interaction, c *Client, reques
 			return lookupError(err, domain.ErrInvalidGrant())
 		}
 		if sr.State != "active" || !sr.ExpiresAt.After(time.Now()) {
-			return &FlowError{Code: "INVALID_INTERACTION", Message: "这次连接已失效或尚未准备完成，请重新发起。", Status: 400}
+			return interactionError("本次授权使用的登录会话已失效，请返回应用重新发起连接并登录。")
 		}
 		grantID := security.Random()
 		g := Grant{ID: grantID, AccountID: fresh.AccountID, ClientID: c.ID, Resource: fresh.Resource, Scopes: scopes, SessionID: fresh.SessionID, Fingerprint: c.Fingerprint, AuthTime: fresh.AuthTime}

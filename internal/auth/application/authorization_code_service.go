@@ -28,19 +28,22 @@ func (s *Service) LoadInteraction(db Database, id string, lock bool) (*Interacti
 	var a Interaction
 	r, err := s.Store.Get(db, "interactions", id, &a, lock)
 	if err != nil {
-		return nil, r, lookupError(err, domain.ErrInvalidGrant())
+		return nil, r, lookupError(err, &FlowError{Code: "INVALID_INTERACTION", Message: "找不到本次授权请求，链接可能已被清理。请返回应用重新发起连接。", Status: 400, Cause: domain.ErrInvalidGrant()})
 	}
 	// 交互已过期或被取消即视为无效。
-	if !r.ExpiresAt.After(time.Now()) || r.State == "cancelled" {
-		return nil, r, domain.ErrInvalidGrant()
+	if !r.ExpiresAt.After(time.Now()) {
+		return nil, r, &FlowError{Code: "INVALID_INTERACTION", Message: "本次授权请求已过期，请返回应用重新发起连接。", Status: 400, Cause: domain.ErrInvalidGrant()}
+	}
+	if r.State == "cancelled" {
+		return nil, r, &FlowError{Code: "INVALID_INTERACTION", Message: "本次授权已取消，请返回应用重新发起连接。", Status: 400, Cause: domain.ErrInvalidGrant()}
 	}
 	c, _, err := s.LoadClient(db, a.Request.ClientID, false)
 	if err != nil {
-		return nil, r, lookupError(err, domain.ErrInvalidClient())
+		return nil, r, lookupError(err, &FlowError{Code: "INVALID_INTERACTION", Message: "本次授权使用的应用注册已失效，请返回应用重新注册连接。", Status: 400, Cause: domain.ErrInvalidClient()})
 	}
 	// 客户端指纹变化说明客户端已重新注册，旧交互失效。
 	if c.Fingerprint != a.ClientFingerprint {
-		return nil, r, domain.ErrInvalidClient()
+		return nil, r, &FlowError{Code: "INVALID_INTERACTION", Message: "应用的连接配置已变更，本次授权无法继续。请返回应用重新发起连接。", Status: 400, Cause: domain.ErrInvalidClient()}
 	}
 	return &a, r, nil
 }

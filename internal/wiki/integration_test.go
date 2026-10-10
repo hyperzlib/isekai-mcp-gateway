@@ -101,6 +101,7 @@ func TestMySQLWikiIntegration(t *testing.T) {
 	store, cfg := scratchStore(t)
 	ctx := context.Background()
 	var mode atomic.Int32
+	var failURL atomic.Bool
 	var deny atomic.Bool
 	var writes atomic.Int32
 	var wikiQueries, fullContentQueries atomic.Int32
@@ -193,7 +194,11 @@ func TestMySQLWikiIntegration(t *testing.T) {
 			if title == "" {
 				title = "Page"
 			}
-			page := wiki.Object{"pageid": 1, "title": title, "readable": true}
+			if q.Get("prop") == "info" && q.Get("inprop") == "url" && failURL.Load() {
+				_ = json.NewEncoder(w).Encode(wiki.Object{"error": wiki.Object{"code": "permissiondenied"}})
+				return
+			}
+			page := wiki.Object{"pageid": 1, "title": title, "readable": true, "fullurl": "https://wiki.test/wiki/" + title}
 			missing := strings.HasPrefix(title, "File:") || strings.HasPrefix(title, "New")
 			if missing {
 				page["pageid"] = -1
@@ -412,7 +417,7 @@ func TestMySQLWikiIntegration(t *testing.T) {
 		}
 		before := writes.Load()
 		out := tool("commit_edit", wiki.Object{"edit_id": editID, "base_version": version, "summary": "test", "ai_involvement": "none"})
-		if out["outcome"] != "saved" {
+		if out["outcome"] != "saved" || out["url"] != "https://wiki.test/wiki/Page" {
 			t.Fatal(out)
 		}
 		// This upstream fixture changes its latest revision on save. The old cursor
@@ -430,7 +435,7 @@ func TestMySQLWikiIntegration(t *testing.T) {
 		version = int64(out["version"].(float64))
 		mode.Store(4)
 		out = tool("commit_edit", wiki.Object{"edit_id": editID, "base_version": version, "summary": "same", "ai_involvement": "none"})
-		if out["outcome"] != "nochange" {
+		if out["outcome"] != "nochange" || out["url"] != "https://wiki.test/wiki/Page" {
 			t.Fatal(out)
 		}
 		version = int64(out["version"].(float64))
@@ -439,6 +444,26 @@ func TestMySQLWikiIntegration(t *testing.T) {
 		if status["state"] != "ready" || status["has_changes"] != false {
 			t.Fatal(status)
 		}
+	})
+	t.Run("url_refresh_failure_preserves_submission", func(t *testing.T) {
+		failURL.Store(true)
+		before := writes.Load()
+		submittedVersion := version
+		out := tool("commit_edit", wiki.Object{"edit_id": editID, "base_version": version, "summary": "url failure", "ai_involvement": "none"})
+		if out["outcome"] != "saved" || out["url"] != "https://wiki.test/wiki/Page" || out["url_refresh_warning"] == nil {
+			t.Fatal(out)
+		}
+		replay := tool("commit_edit", wiki.Object{"edit_id": editID, "base_version": submittedVersion, "summary": "url failure", "ai_involvement": "none"})
+		if replay["url_refresh_warning"] == nil || writes.Load() != before+1 {
+			t.Fatal("URL warning replay resent write", replay)
+		}
+		failURL.Store(false)
+		version = int64(out["version"].(float64))
+		pulled := tool("pull_edit", wiki.Object{"edit_id": editID, "base_version": version})
+		if pulled["url"] != "https://wiki.test/wiki/Page" {
+			t.Fatal(pulled)
+		}
+		version = int64(pulled["version"].(float64))
 	})
 	t.Run("failed_submit_pull_and_network_recovery", func(t *testing.T) {
 		out := tool("update_edit", wiki.Object{"edit_id": editID, "base_version": version, "operations": []any{wiki.Object{"type": "replace_content", "content": "draft"}}})
@@ -501,13 +526,49 @@ func TestMySQLWikiIntegration(t *testing.T) {
 		}
 		id := out["edit_id"].(string)
 		out, e = service.Commit(ctx, &call2, wiki.Input{EditID: id, BaseVersion: 1, Summary: "pending", AIInvolvement: "none"})
-		if e != nil || out["outcome"] != "submitted_for_review" {
+		if e != nil || out["outcome"] != "submitted_for_review" || out["url"] != "https://wiki.test/wiki/Page" {
 			t.Fatal(out, e)
 		}
 		_, e = service.Get(ctx, &call2, "get_edit_status", wiki.Input{EditID: id})
 		if failure.Describe(e).Code != "EDIT_SESSION_CLOSED" {
 			t.Fatal(e)
 		}
+	})
+	t.Run("new_page_url_public_and_pending", func(t *testing.T) {
+		for _, pending := range []bool{false, true} {
+			cfg2 := *cfg
+			cfg2.Static.Extensions.Moderation.Enabled = pending
+			call2 := *call
+			call2.Config = &cfg2
+			out, err := service.Begin(ctx, &call2, "begin_create", wiki.Input{Title: "New URL"})
+			if err != nil || out["url"] != "" {
+				t.Fatal(out, err)
+			}
+			id := out["edit_id"].(string)
+			if pending {
+				mode.Store(3)
+			} else {
+				mode.Store(0)
+			}
+			result, err := service.Commit(ctx, &call2, wiki.Input{EditID: id, BaseVersion: 1, Summary: "new", AIInvolvement: "none"})
+			if err != nil {
+				t.Fatal(err)
+			}
+			want := "https://wiki.test/wiki/Page"
+			if pending {
+				want = ""
+			}
+			if result["url"] != want {
+				t.Fatal(result)
+			}
+			if !pending {
+				saved, err := service.Get(ctx, &call2, "get_edit_status", wiki.Input{EditID: id})
+				if err != nil || saved["url"] != want {
+					t.Fatal(saved, err)
+				}
+			}
+		}
+		mode.Store(0)
 	})
 	t.Run("upload_receive_warning_confirm", func(t *testing.T) {
 		file := []byte("%PDF-1.4\n%test\n")

@@ -14,10 +14,10 @@
 title 需要符合：
 
 ```javascript
-let titleEncoded = encodeURI(titleText)
+let titleEncoded = encodeURIComponent(titleText)
 ```
 
-编码格式。（需要转义的字符与encodeURI一致，不强制使用js进行编码）
+编码格式。（需要转义的字符与encodeURIComponent一致，不强制使用js进行编码）
 
 ## 章节结构和页面依赖
 

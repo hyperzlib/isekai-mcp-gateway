@@ -13,7 +13,7 @@ func Guards(c *config.Config, next http.Handler) http.Handler {
 
 	// 下游为 chi 路由时注入，便于日志解析匹配的路由模板
 	if routes, ok := next.(chi.Routes); ok {
-		return Logging(guarded, routes)
+		return logging(guarded, func() bool { return requestTraceEnabled(c) }, routes)
 	}
-	return Logging(guarded)
+	return logging(guarded, func() bool { return requestTraceEnabled(c) })
 }

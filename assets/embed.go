@@ -6,7 +6,7 @@ import (
 	"io/fs"
 )
 
-//go:embed auth
+//go:embed auth home icons
 var files embed.FS
 
 func FS() fs.FS { return files }

@@ -163,9 +163,19 @@ type AppFile struct {
 			Mapping map[string]string `json:"mapping"`
 		} `json:"aiRevisionTags"`
 	} `json:"additions"`
-	Logging struct {
-		Level string `json:"level"`
-	} `json:"logging"`
+	Logging Logging `json:"logging"`
+}
+
+type Logging struct {
+	TraceRequest  bool   `json:"traceRequest"`
+	Level         string `json:"level"`
+	ConsoleFormat string `json:"consoleFormat"`
+	File          struct {
+		Enabled   bool   `json:"enabled"`
+		Split     bool   `json:"split"`
+		Path      string `json:"path"`
+		ErrorPath string `json:"errorPath"`
+	} `json:"file"`
 }
 
 type Secrets struct {

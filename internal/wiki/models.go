@@ -86,6 +86,7 @@ type Edit struct {
 	Kind                     string     `json:"kind"`
 	PageID                   int64      `json:"page_id"`
 	Title                    string     `json:"title"`
+	URL                      string     `json:"url"`
 	BaseRevisionID           int64      `json:"base_revision_id"`
 	ModerationBaseRevisionID *int64     `json:"moderation_base_revision_id,omitempty"`
 	StartTimestamp           string     `json:"-"`

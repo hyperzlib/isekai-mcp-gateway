@@ -19,6 +19,7 @@ import (
 	repository "isekai-mcp-gateway/internal/auth/repository/mysql"
 	"isekai-mcp-gateway/internal/config"
 	"isekai-mcp-gateway/internal/failure"
+	"isekai-mcp-gateway/internal/logging"
 	"isekai-mcp-gateway/internal/outbound"
 	"isekai-mcp-gateway/internal/persistence"
 	"isekai-mcp-gateway/internal/runtimefiles"
@@ -36,7 +37,23 @@ func Serve(c *config.Config, files *runtimefiles.Files, watchTemplates bool) (er
 	// 建立可动态调整级别的 JSON 日志并设为全局 logger
 	level := new(slog.LevelVar)
 	outbound.SetLogLevel(level, c.App.Logging.Level)
-	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stderr, &slog.HandlerOptions{Level: level})))
+	logger, closeLogs, err := logging.New(c.App.Logging, level, os.Stdout, os.Stderr)
+	if err != nil {
+		return failure.Wrap("logging.open", err)
+	}
+	previousLogger := slog.Default()
+	defer func() {
+		slog.SetDefault(previousLogger)
+		if closeErr := closeLogs(); closeErr != nil {
+			failure.Log(context.Background(), "logging.close", failure.Wrap("logging.close", closeErr))
+		}
+	}()
+	slog.SetDefault(logger)
+	defer func() {
+		if err != nil {
+			failure.Log(context.Background(), "startup.serve", err)
+		}
+	}()
 	if strings.HasPrefix(c.App.MediaWiki.APIURL, "http://") {
 		slog.Warn("Wiki API uses HTTP; transport is not encrypted")
 	}

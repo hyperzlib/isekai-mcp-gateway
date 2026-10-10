@@ -110,6 +110,12 @@ func (c *Config) Validate() (err error) {
 	if !slices.Contains([]string{"trace", "debug", "info", "warn", "error"}, c.App.Logging.Level) {
 		return errors.New("invalid logging level")
 	}
+	if !slices.Contains([]string{"text", "json"}, c.App.Logging.ConsoleFormat) {
+		return errors.New("invalid logging consoleFormat")
+	}
+	if c.App.Logging.File.Enabled && (strings.TrimSpace(c.App.Logging.File.Path) == "" || (c.App.Logging.File.Split && strings.TrimSpace(c.App.Logging.File.ErrorPath) == "")) {
+		return errors.New("logging file paths are required")
+	}
 	if err := c.resolveSecrets(); err != nil {
 		return err
 	}

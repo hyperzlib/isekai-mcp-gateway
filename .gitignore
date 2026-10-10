@@ -9,6 +9,7 @@
 # 运行时数据与日志
 /artifacts/
 /data/
+/logs/
 /config/data/
 
 # 缓存与临时文件

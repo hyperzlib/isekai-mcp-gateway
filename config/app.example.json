@@ -85,6 +85,14 @@
     }
   },
   "logging": {
-    "level": "info"
+    "traceRequest": false,
+    "level": "info",
+    "consoleFormat": "text",
+    "file": {
+      "enabled": false,
+      "split": true,
+      "path": "./logs/log.jsonl",
+      "errorPath": "./logs/error.jsonl"
+    }
   }
 }

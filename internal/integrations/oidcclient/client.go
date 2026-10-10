@@ -56,7 +56,28 @@ func (c *OidcConnect) Authenticate(ctx context.Context, code, verifier, nonce st
 	// 用授权码与 PKCE verifier 换取 token
 	token, err := c.oauth.Exchange(ctx, code, oauth2.VerifierOption(verifier))
 	if err != nil {
+		// 记录脱敏后的换码请求与上游响应（密钥已掩码），便于按错误编号排查
+		t := failure.UpstreamTrace{
+			Method:         "POST",
+			URL:            c.oauth.Endpoint.TokenURL,
+			RequestHeaders: "Content-Type: application/x-www-form-urlencoded",
+			RequestBody: url.Values{
+				"client_id":     {c.oauth.ClientID},
+				"grant_type":    {"authorization_code"},
+				"code":          {code},
+				"redirect_uri":  {c.oauth.RedirectURL},
+				"client_secret": {"[REDACTED]"},
+				"code_verifier": {"[REDACTED]"},
+			}.Encode(),
+		}
 		var response *oauth2.RetrieveError
+		if errors.As(err, &response) {
+			if response.Response != nil {
+				t.Status = response.Response.StatusCode
+			}
+			t.ResponseBody = failure.ClipResponseBody([]byte(response.Body))
+		}
+		failure.TraceUpstream(ctx, "oidc.exchange", t, err)
 
 		// 授权码失效需用户重新登录
 		if errors.As(err, &response) && response.ErrorCode == "invalid_grant" {

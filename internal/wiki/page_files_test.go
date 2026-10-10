@@ -82,7 +82,7 @@ func TestPageReadFileURLsSnapshotAndPagination(t *testing.T) {
 					title := q.Get("titles")
 					return Object{"query": Object{"pages": []any{Object{"title": title, "imageinfo": []any{Object{"url": "https://files.test/" + title}}}}}}
 				}
-				pg := Object{"pageid": 3, "title": "测试", "actions": Object{"read": []any{}}, "isekaiuseredited": Object{"has_edited": 0}}
+				pg := Object{"fullurl": "https://wiki.test/wiki/测试", "pageid": 3, "title": "测试", "actions": Object{"read": []any{}}, "isekaiuseredited": Object{"has_edited": 0}}
 				switch q.Get("prop") {
 				case "info|moderationeditstate|isekaiuseredited":
 					pg["moderationeditstate"] = Object{"page_id": 3, "title": "测试", "content_source": "pending", "content": pending, "content_hash": security.Hash(pending), "public_revision_id": 42, "temp_revision_id": 9, "chain_version": 1}
@@ -105,6 +105,9 @@ func TestPageReadFileURLsSnapshotAndPagination(t *testing.T) {
 				out, err := s.Read(context.Background(), c, tool, input)
 				if err != nil {
 					t.Fatal(err)
+				}
+				if out["url"] != "https://wiki.test/wiki/测试" {
+					t.Fatal("missing snapshot URL", out)
 				}
 				if n == 0 {
 					files = object(out["file_urls"])

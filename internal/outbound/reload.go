@@ -64,6 +64,11 @@ func (m *Manager) Watch(ctx context.Context, c *config.Config, level *slog.Level
 				continue
 			}
 			// 构建新 bundle 设 30 秒上限，失败时保留旧快照。
+			currentLogging := m.Get().Config.App.Logging
+			if cfg.App.Logging.ConsoleFormat != currentLogging.ConsoleFormat || cfg.App.Logging.File != currentLogging.File {
+				slog.Warn("logging output changes require restart; previous snapshot retained")
+				continue
+			}
 			reloadCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 			bundle, err := Build(reloadCtx, cfg)
 			cancel()

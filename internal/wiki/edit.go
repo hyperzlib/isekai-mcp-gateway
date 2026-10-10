@@ -62,7 +62,7 @@ func status(e Edit) Object {
 	if len(ranges) > 100 {
 		ranges = ranges[:100]
 	}
-	out := Object{"edit_id": e.ID, "page_id": e.PageID, "title": e.Title, "kind": e.Kind, "state": e.State, "version": e.Version, "has_changes": e.Content != e.Origin, "close_requested": e.CloseRequested, "expires_at": e.ExpiresAt, "base_revision_id": e.BaseRevisionID, "content_hash": security.Hash(e.Content), "content_bytes": len(e.Content), "total_lines": len(lines(e.Content)), "conflict_count": count, "conflict_ranges": ranges, "conflict_markers_valid": valid, "resources": Object{"status": "wiki://edit/" + e.ID, "content": "wiki://edit/" + e.ID + "/content", "diff": "wiki://edit/" + e.ID + "/diff", "preview": "wiki://edit/" + e.ID + "/preview", "conflict": "wiki://edit/" + e.ID + "/conflict"}}
+	out := Object{"edit_id": e.ID, "page_id": e.PageID, "title": e.Title, "url": e.URL, "kind": e.Kind, "state": e.State, "version": e.Version, "has_changes": e.Content != e.Origin, "close_requested": e.CloseRequested, "expires_at": e.ExpiresAt, "base_revision_id": e.BaseRevisionID, "content_hash": security.Hash(e.Content), "content_bytes": len(e.Content), "total_lines": len(lines(e.Content)), "conflict_count": count, "conflict_ranges": ranges, "conflict_markers_valid": valid, "resources": Object{"status": "wiki://edit/" + e.ID, "content": "wiki://edit/" + e.ID + "/content", "diff": "wiki://edit/" + e.ID + "/diff", "preview": "wiki://edit/" + e.ID + "/preview", "conflict": "wiki://edit/" + e.ID + "/conflict"}}
 	if e.PageID == 0 {
 		out["page_id"] = nil
 	}
@@ -139,7 +139,7 @@ func (s *Service) Begin(ctx context.Context, c *Call, name string, i Input) (Obj
 		}
 	}
 	now := time.Now().UTC()
-	edit := Edit{ID: "edit_" + security.Random(), Owner: c.owner(c.Client.Config.SiteID), SiteID: c.Client.Config.SiteID, Kind: kind, PageID: number(snap["page_id"]), Title: str(snap["title"]), BaseRevisionID: number(snap["baseline_revision_id"]), Origin: str(snap["content"]), Content: str(snap["content"]), Source: source, Version: 1, State: "ready", CreatedAt: now, ExpiresAt: now.Add(time.Duration(c.Config.App.Editing.TTL) * time.Second), StartTimestamp: now.Format("2006-01-02T15:04:05Z")}
+	edit := Edit{ID: "edit_" + security.Random(), Owner: c.owner(c.Client.Config.SiteID), SiteID: c.Client.Config.SiteID, Kind: kind, PageID: number(snap["page_id"]), Title: str(snap["title"]), URL: str(snap["url"]), BaseRevisionID: number(snap["baseline_revision_id"]), Origin: str(snap["content"]), Content: str(snap["content"]), Source: source, Version: 1, State: "ready", CreatedAt: now, ExpiresAt: now.Add(time.Duration(c.Config.App.Editing.TTL) * time.Second), StartTimestamp: now.Format("2006-01-02T15:04:05Z")}
 	if c.Config.Static.Extensions.Moderation.Enabled {
 		n := number(snap["temp_revision_id"])
 		edit.ModerationBaseRevisionID = &n
@@ -328,7 +328,7 @@ func (s *Service) Get(ctx context.Context, c *Call, name string, i Input) (Objec
 	return nil, errCode("INVALID_REQUEST", "Unknown edit read operation.")
 }
 func content(e Edit, c *Call, i Input) (Object, error) {
-	out := Object{"edit_id": e.ID, "version": e.Version, "content_hash": security.Hash(e.Content)}
+	out := Object{"edit_id": e.ID, "url": e.URL, "version": e.Version, "content_hash": security.Hash(e.Content)}
 	if e.State != "error" {
 		out["content_source"] = e.Source
 	}
