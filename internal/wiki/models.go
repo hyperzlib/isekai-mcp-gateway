@@ -23,6 +23,7 @@ type Response struct {
 	Confirmed   bool   `json:"confirmed"`
 }
 type Input struct {
+	URL                     string      `json:"url,omitempty"`
 	Titles                  []string    `json:"titles,omitempty"`
 	Page                    PageRef     `json:"page,omitempty"`
 	Title                   string      `json:"title,omitempty"`

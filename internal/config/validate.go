@@ -57,6 +57,9 @@ func (c *Config) Validate() (err error) {
 	if !ValidAPIURL(m.APIURL) {
 		return errors.New("mediawiki.apiUrl requires HTTP or HTTPS without userinfo/query/fragment")
 	}
+	if err := c.validateWikiOrigins(); err != nil {
+		return err
+	}
 	// issuer、resource 与回调地址必须由 publicUrl 派生，保证 OAuth 元数据自洽。
 	if g.Issuer != strings.TrimRight(s.PublicURL, "/") || g.Resource != g.Issuer+"/mcp" || k.RedirectURI != g.Issuer+"/auth/oidc_client/callback" {
 		return errors.New("issuer/resource/OIDC callback must match publicUrl")

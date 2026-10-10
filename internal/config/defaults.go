@@ -16,6 +16,7 @@ func Defaults() *Config {
 	c.App.Auth.OidcClient.Scopes = []string{"openid", "profile", "email"}
 	c.App.Auth.Consent.DefaultSelectedScopes = []string{"mcp:access"}
 	c.App.MediaWiki.TimeoutMS = 15000
+	c.App.MediaWiki.PublicOrigins = []string{}
 	c.App.MediaWiki.Maxlag = 5
 	c.App.MediaWiki.PageCacheTTL = 600
 	c.App.Editing.TTL = 3600

@@ -1,0 +1,1 @@
+Resolve an allowed HTTP(S) page URL or a site absolute path (e.g. /首页 or /index.php?title=首页) through the Wiki's isekai-title-info Action. Returns exactly title, page_id, exists; missing pages have page_id=0 and exists=false.

@@ -11,7 +11,7 @@ import (
 func IsPageRead(name string) bool {
 	switch name {
 	case "get_latest_page", "get_baseline_page", "get_history", "get_backlinks",
-		"get_page_structure", "get_template_data", "get_page_dependencies", "get_transclusions":
+		"get_page_structure", "get_template_data", "get_page_dependencies", "get_transclusions", "list_subpages":
 		return true
 	}
 	return false

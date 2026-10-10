@@ -98,13 +98,27 @@ func TestReadModuleRegistration(t *testing.T) {
 	}
 	defer cs.Close()
 	tools, err := cs.ListTools(ctx, nil)
-	if err != nil || len(tools.Tools) != 17 {
+	if err != nil || len(tools.Tools) != 19 {
 		t.Fatalf("tools: %#v %v", tools, err)
 	}
+	foundSubpages := false
+	foundResolveURL := false
 	for _, tool := range tools.Tools {
+		if tool.Name == "wiki.resolve_page_url" {
+			foundResolveURL = true
+		}
+		if tool.Name == "wiki.list_subpages" {
+			foundSubpages = true
+		}
 		if tool.InputSchema == nil || tool.OutputSchema == nil || tool.Annotations == nil || !tool.Annotations.ReadOnlyHint {
 			t.Fatalf("invalid read tool: %#v", tool)
 		}
+	}
+	if !foundSubpages {
+		t.Fatal("list_subpages was not discovered by the official MCP client")
+	}
+	if !foundResolveURL {
+		t.Fatal("resolve_page_url was not discovered by the official MCP client")
 	}
 	templates, err := cs.ListResourceTemplates(ctx, nil)
 	if err != nil || len(templates.ResourceTemplates) != 20 {
@@ -121,6 +135,13 @@ func TestReadModuleRegistration(t *testing.T) {
 	}{
 		{"wiki.get_my_contributions", map[string]any{"user_id": float64(17)}},
 		{"wiki.get_page_structure", map[string]any{"title": "A", "page_id": float64(3)}},
+		{"wiki.list_subpages", map[string]any{"title": "A", "page_id": float64(3)}},
+		{"wiki.list_subpages", map[string]any{"title": "A", "limit": float64(0)}},
+		{"wiki.list_subpages", map[string]any{"title": "A", "limit": float64(101)}},
+		{"wiki.list_subpages", map[string]any{"revision_id": float64(3)}},
+		{"wiki.resolve_page_url", map[string]any{}},
+		{"wiki.resolve_page_url", map[string]any{"url": ""}},
+		{"wiki.resolve_page_url", map[string]any{"url": "/首页", "title": "首页"}},
 	} {
 		if _, err := cs.CallTool(ctx, &mcp.CallToolParams{Name: tt.name, Arguments: tt.args}); err == nil {
 			t.Fatalf("accepted %s invalid parameters", tt.name)

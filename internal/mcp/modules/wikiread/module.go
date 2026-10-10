@@ -15,7 +15,7 @@ func Module(s *wiki.Service) []gatewaymcp.Definition {
 		tools.GetBacklinks(s), tools.ListCategory(s), tools.GetUser(s),
 		tools.GetPageStructure(s), tools.GetTemplateData(s),
 		tools.GetPageDependencies(s), tools.GetTransclusions(s),
-		tools.GetFileURLs(s),
+		tools.GetFileURLs(s), tools.ListSubpages(s), tools.ResolvePageURL(s),
 	}
 	for _, spec := range []struct{ name, suffix, operation string }{
 		{"page", "", "get_latest_page"},

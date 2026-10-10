@@ -107,12 +107,14 @@ type OidcConnect struct {
 }
 
 type MediaWiki struct {
-	SiteID       string `json:"siteId"`
-	APIURL       string `json:"apiUrl"`
-	TimeoutMS    int    `json:"timeoutMs"`
-	Maxlag       int    `json:"maxlagSeconds"`
-	PageCacheTTL int    `json:"pageCacheTtlSeconds"`
-	Bridge       struct {
+	SiteID        string   `json:"siteId"`
+	APIURL        string   `json:"apiUrl"`
+	PublicURL     string   `json:"publicUrl"`
+	PublicOrigins []string `json:"publicOrigins"`
+	TimeoutMS     int      `json:"timeoutMs"`
+	Maxlag        int      `json:"maxlagSeconds"`
+	PageCacheTTL  int      `json:"pageCacheTtlSeconds"`
+	Bridge        struct {
 		KeyID     string `json:"keyId"`
 		SecretEnv string `json:"secretEnv"`
 		Secret    string `json:"secret,omitempty" secret:"true"`

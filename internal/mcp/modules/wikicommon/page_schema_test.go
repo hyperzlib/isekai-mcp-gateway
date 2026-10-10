@@ -2,8 +2,26 @@ package wikicommon
 
 import "testing"
 
+func TestResolvePageURLSchema(t *testing.T) {
+	s := resolveSchema(Schema("resolve_page_url"))
+	for _, input := range []map[string]any{{"url": "/首页"}, {"url": "https://wiki.test/index.php?title=首页"}} {
+		if err := s.Validate(input); err != nil {
+			t.Fatal(err)
+		}
+	}
+	o := resolveSchema(OutputSchema("resolve_page_url"))
+	if err := o.Validate(map[string]any{"title": "首页", "page_id": float64(1), "exists": true}); err != nil {
+		t.Fatal(err)
+	}
+	for _, value := range []map[string]any{{"title": "首页", "page_id": float64(1)}, {"title": "首页", "page_id": float64(1), "exists": nil}, {"title": "首页", "page_id": float64(1), "exists": true, "extra": 1}} {
+		if o.Validate(value) == nil {
+			t.Fatalf("invalid output accepted: %#v", value)
+		}
+	}
+}
+
 func TestPageReadSelectors(t *testing.T) {
-	for _, name := range []string{"get_latest_page", "get_baseline_page", "get_history", "get_backlinks"} {
+	for _, name := range []string{"get_latest_page", "get_baseline_page", "get_history", "get_backlinks", "list_subpages"} {
 		s := resolveSchema(Schema(name))
 		for _, input := range []map[string]any{{"title": "帮助:编辑/章节"}, {"page_id": float64(123)}} {
 			if err := s.Validate(input); err != nil {
@@ -40,7 +58,7 @@ func TestAdditionalReadSchemas(t *testing.T) {
 			}
 		}
 	}
-	for _, name := range []string{"get_template_data", "get_transclusions"} {
+	for _, name := range []string{"get_template_data", "get_transclusions", "list_subpages"} {
 		s := resolveSchema(Schema(name))
 		if err := s.Validate(map[string]any{"title": "Template:人物"}); err != nil {
 			t.Fatal(err)

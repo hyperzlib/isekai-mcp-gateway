@@ -27,6 +27,8 @@
   "mediawiki": {
     "siteId": "isekai",
     "apiUrl": "https://wiki.example.org/api.php",
+    "publicUrl": "https://wiki.example.org",
+    "publicOrigins": [],
     "timeoutMs": 15000,
     "maxlagSeconds": 5,
     "pageCacheTtlSeconds": 600,

@@ -8,7 +8,15 @@ import (
 // Known fields are described; API result metadata may add fields without hiding
 // the stable Gateway envelope from clients.
 func OutputSchema(name string) map[string]any {
+	if name == "resolve_page_url" {
+		return map[string]any{"type": "object", "additionalProperties": false, "required": []string{"title", "page_id", "exists"}, "properties": map[string]any{
+			"title":   map[string]any{"type": "string", "minLength": 1},
+			"page_id": map[string]any{"type": "integer", "minimum": 0},
+			"exists":  map[string]any{"type": "boolean"},
+		}}
+	}
 	fields := map[string]string{
+		"list_subpages":          "page_id title requested_title results next_cursor queried_at",
 		"get_file_urls":          "file_urls",
 		"get_user_contributions": "user_id username results next_cursor queried_at resources",
 		"get_my_contributions":   "user_id results next_cursor queried_at resources",

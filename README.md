@@ -5,6 +5,8 @@ Streamable HTTP MCP、上游 OIDC 登录、Gateway OAuth，以及页面读取、
 
 OAuth 注册复用、指纹算法、存储拆分及迁移注意事项见 [OAuth 存储说明](docs/oauth-storage.md)。
 
+`wiki.resolve_page_url` 支持完整页面 URL 和 `/Index`、`/index.php?title=首页` 等站内绝对路径。配置 `mediawiki.publicUrl` 为 Wiki 请求目标 origin，使用 `mediawiki.publicOrigins` 数组允许其他公开来源 origin；请求保留路径和查询，统一发送到 `publicUrl`。这两个 app 配置项支持热重载。Wiki 须提供 `action=isekai-title-info`，工具返回 `{title, page_id, exists}`，不存在页面的 `page_id` 为 0。未配置 `publicUrl` 时工具返回 `FEATURE_UNAVAILABLE`。
+
 ## 依赖与启动
 
 - Go 1.25.6，纯 Go 构建，依赖锁定于 `go.mod` / `go.sum`。

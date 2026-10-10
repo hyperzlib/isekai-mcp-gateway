@@ -262,6 +262,10 @@ func (s *Service) Read(ctx context.Context, c *Call, name string, i Input) (Obje
 	if e := require(c, "wiki:read"); e != nil {
 		return nil, e
 	}
+	if name == "resolve_page_url" {
+		out, err := s.resolvePageURL(ctx, c, i)
+		return boundedRead(c, out, err)
+	}
 	// 新增读取复用统一授权和返回大小限制，业务逻辑按活动、解析和模板分开。
 	if IsActivityRead(name) {
 		out, err := s.readActivity(ctx, c, name, i)
@@ -281,6 +285,10 @@ func (s *Service) Read(ctx context.Context, c *Call, name string, i Input) (Obje
 	}
 	if name == "get_transclusions" {
 		out, err := s.readTransclusions(ctx, c, i)
+		return boundedRead(c, out, err)
+	}
+	if name == "list_subpages" {
+		out, err := s.readSubpages(ctx, c, i)
 		return boundedRead(c, out, err)
 	}
 	if IsPageRead(name) {

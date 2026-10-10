@@ -1,5 +1,7 @@
 # 页面读取
 
+resolve_page_url 将完整 HTTP(S) 页面 URL 或站内绝对路径（如 /首页、/index.php?title=首页）解析为 title、page_id。
+
 页面读取工具统一用顶层 title 或 page_id 选择页面，恰好提供一个，优先使用含命名空间的 title。get_page_structure、get_page_dependencies 还接受 revision_id 锁定某次正式修订版。
 
 - get_latest_page：最新可见正文；启用 Moderation 时可能是当前用户提交的审核中的修订版，其 temp_revision_id 不能当作正式 revision_id。
@@ -38,6 +40,8 @@ get_transclusions 查询哪些页面嵌入了当前页面（一般是指模板�
 资源 URI（如 pages/by-title、/history、/template-data 等）直接取结果里的 resources 链接即可，作为 Tool 的备用入口；筛选和分页仍优先用 Tool。
 
 ## 子页面结构
+
+list_subpages 用顶层 title 或 page_id（二选一）分页列出同一命名空间下的全部后代，包含多层子页面和重定向。limit 默认 20，范围 1–100；续页传 cursor，并保持原选择参数和 limit。results 每条包含 pageid、ns、title、relative_title、depth 和 resources，直接子页面 depth=1。不存在的父标题仍可查询其后代，父 page_id=null；不存在的 page_id 返回 NOT_FOUND。
 
 异世界百科使用子页面结构组织复杂设定。
 

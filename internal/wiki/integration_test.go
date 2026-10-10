@@ -333,7 +333,7 @@ func TestMySQLWikiIntegration(t *testing.T) {
 		if e != nil {
 			t.Fatal(e)
 		}
-		if len(list.Tools) != 35 {
+		if len(list.Tools) != 37 {
 			t.Fatalf("got %d tools", len(list.Tools))
 		}
 		for _, tool := range list.Tools {

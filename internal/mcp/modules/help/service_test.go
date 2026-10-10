@@ -20,7 +20,7 @@ func TestHelpUsingEmbeddedTextTemplates(t *testing.T) {
 		if err != nil {
 			t.Fatal(topic, err)
 		}
-		if got.Topic == "" || got.URI != "wiki://help/"+got.Topic || !strings.HasPrefix(got.Content, "#") || len(got.AvailableOperations) != 37 || !slices.Contains(got.AvailableOperations, "wiki.get_file_urls") {
+		if got.Topic == "" || got.URI != "wiki://help/"+got.Topic || !strings.HasPrefix(got.Content, "#") || len(got.AvailableOperations) != 39 || !slices.Contains(got.AvailableOperations, "wiki.resolve_page_url") || !slices.Contains(got.AvailableOperations, "wiki.list_subpages") || !slices.Contains(got.AvailableOperations, "wiki.get_file_urls") {
 			t.Fatalf("invalid result: %+v", got)
 		}
 	}

@@ -31,6 +31,8 @@ func InitDevelopment(dir string) error {
 	c.App.Auth.OidcClient.Issuer = "http://127.0.0.1:8080/realms/isekai"
 	c.App.Auth.OidcClient.RedirectURI = c.Static.Server.PublicURL + "/auth/oidc_client/callback"
 	c.App.MediaWiki.APIURL = "http://127.0.0.1/api.php"
+	c.App.MediaWiki.PublicURL = "http://127.0.0.1"
+	c.App.MediaWiki.PublicOrigins = []string{}
 	keys, err := security.GenerateKeys()
 	if err != nil {
 		return err

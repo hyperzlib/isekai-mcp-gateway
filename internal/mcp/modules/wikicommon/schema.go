@@ -23,6 +23,8 @@ func Schema(name string) map[string]any {
 		}
 	}
 	fields := map[string]string{
+		"resolve_page_url":       "url!",
+		"list_subpages":          "page! limit cursor",
 		"get_file_urls":          "titles!",
 		"get_user_contributions": "user_id username limit cursor start end direction namespaces show tag",
 		"get_my_contributions":   "limit cursor start end direction namespaces show tag",
@@ -113,6 +115,15 @@ func Schema(name string) map[string]any {
 		properties["ai_involvement"] = map[string]any{"type": "string", "enum": []string{"none", "ai_organized", "ai_assisted", "ai_generated"}}
 	}
 	result := map[string]any{"type": "object", "additionalProperties": false, "properties": properties}
+	if name == "resolve_page_url" {
+		properties["url"].(map[string]any)["minLength"] = 1
+		properties["url"].(map[string]any)["description"] = "Allowed HTTP(S) page URL or site absolute path, such as /index.php?title=首页."
+	}
+	if name == "list_subpages" {
+		properties["limit"].(map[string]any)["minimum"] = 1
+		properties["limit"].(map[string]any)["maximum"] = 100
+		properties["limit"].(map[string]any)["default"] = 20
+	}
 	if pageRead {
 		result["oneOf"] = []any{map[string]any{"required": []string{"title"}, "not": map[string]any{"required": []string{"page_id"}}}, map[string]any{"required": []string{"page_id"}, "not": map[string]any{"required": []string{"title"}}}}
 		properties["title"].(map[string]any)["minLength"] = 1
