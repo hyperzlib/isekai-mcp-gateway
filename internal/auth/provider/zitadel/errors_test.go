@@ -12,8 +12,10 @@ import (
 	"time"
 
 	"github.com/zitadel/oidc/v3/pkg/oidc"
+	"github.com/zitadel/oidc/v3/pkg/op"
 
 	"isekai-mcp-gateway/internal/auth/application"
+	"isekai-mcp-gateway/internal/auth/domain"
 	"isekai-mcp-gateway/internal/config"
 	"isekai-mcp-gateway/internal/failure"
 	"isekai-mcp-gateway/internal/outbound"
@@ -43,6 +45,7 @@ type endpointStore struct {
 	db              *endpointDB
 	cause           error
 	method          string
+	blocked         bool
 	registryFailure bool
 }
 
@@ -55,13 +58,18 @@ func (s *endpointStore) Get(_ application.Database, kind, key string, value any,
 		return persistence.Row{}, nil
 	}
 	if kind == "clients" {
+		level := domain.TrustUnknown
+		if s.blocked {
+			level = domain.TrustBlocked
+		}
 		data, _ := json.Marshal(map[string]any{
-			"Metadata":       application.Client{ID: "client", TokenAuthMethod: s.method, Grants: []string{"authorization_code", "refresh_token"}, Responses: []string{"code"}, Scope: "mcp:access offline_access"},
+			"Metadata":       application.Client{ID: "client", TrustLevel: level, TokenAuthMethod: s.method, Grants: []string{"authorization_code", "refresh_token"}, Responses: []string{"code"}, Scope: "mcp:access offline_access"},
 			"ResourceClient": true, "SecretHash": security.Hash("test-password"), "Source": "pre",
 		})
 		if err := json.Unmarshal(data, value); err != nil {
 			return persistence.Row{}, err
 		}
+		value.(*domain.StoredClient).Metadata.TrustLevel = level
 		return persistence.Row{State: "active", ExpiresAt: time.Now().Add(time.Hour)}, nil
 	}
 	return persistence.Row{}, s.cause
@@ -239,5 +247,48 @@ func TestRealProviderPreservesAbsentTokenSemantics(t *testing.T) {
 				t.Fatal("absent token introspected as active")
 			}
 		})
+	}
+}
+
+func TestBlockedClientEndpoints(t *testing.T) {
+	cfg := config.Defaults()
+	svc := &Service{Service: &application.Service{Config: cfg, Store: &endpointStore{db: new(endpointDB), blocked: true}}}
+	svc.PageError = func(w http.ResponseWriter, r *http.Request, message string, status int) {
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.WriteHeader(status)
+		w.Write([]byte("<!doctype html><p>" + message + "</p>"))
+	}
+	for _, endpoint := range []string{"authorize", "token"} {
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest("POST", "/oauth/"+endpoint, strings.NewReader(url.Values{"client_id": {"client"}, "grant_type": {"authorization_code"}, "resource": {cfg.Static.Auth.Gateway.Resource}}.Encode()))
+		r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		if endpoint == "authorize" {
+			svc.Authorize(w, r)
+		} else {
+			svc.TokenEndpoint(w, r)
+		}
+		if w.Code != 400 || !strings.Contains(w.Body.String(), domain.BlockedClientDescription) {
+			t.Fatalf("%s: %d %s", endpoint, w.Code, w.Body.String())
+		}
+		if endpoint == "authorize" && (!strings.HasPrefix(w.Header().Get("Content-Type"), "text/html") || !strings.Contains(w.Body.String(), "<!doctype html>")) {
+			t.Fatal("authorization error is not HTML")
+		}
+		if endpoint == "token" && !strings.Contains(w.Body.String(), "unauthorized_client") {
+			t.Fatal("token error is not OAuth JSON")
+		}
+	}
+}
+
+func TestWorkBuddyRedirectCompatibility(t *testing.T) {
+	raw := "workbuddy://workbuddy/mcp/custom-mcp%3Aisekaiwiki/oauth/callback"
+	c := &Client{Client: &domain.Client{TokenAuthMethod: "none", Redirects: []string{raw}}}
+	if !c.ValidRedirect(raw) {
+		t.Fatal("registered redirect rejected")
+	}
+	if err := op.ValidateAuthReqRedirectURI(c, raw, oidc.ResponseTypeCode); err != nil {
+		t.Fatal(err)
+	}
+	if c.ValidRedirect(raw + "/other") {
+		t.Fatal("unregistered redirect accepted")
 	}
 }

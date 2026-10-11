@@ -31,7 +31,9 @@ get_page_dependencies 返回 {type, data, resources?}，dependency_types 可按�
 
 ## 文件与嵌入引用
 
-format=source 时结果额外带 file_urls 映射，把完整页面（含模板展开）用到的 `文件:名称` 映射到原始文件 URL。也可以用 get_file_urls 直接解析 1–500 个带文件命名空间的标题，返回独立的 file_urls；支持重定向，缺失文件省略。
+get_latest_page、get_baseline_page 在 format=source（含默认格式）时额外返回完整 linked_pages 和 file_urls。linked_pages 包含命名空间、模板展开产生的页面链接和不存在页面的链接，无链接时为 []。file_urls 完整页面（含模板展开）用到的 `文件:名称` 映射到原始文件 URL。HTML 不返回这两个字段。
+
+也可以用 get_file_urls 直接解析 1–500 个带文件命名空间的标题，会返回独立的 file_urls；缺失文件会被省略。
 
 get_template_data 读取页面是否声明了 TemplateData：has_template_data=false、data=null 表示只有页面没有声明，不要把从 wikitext 推测的参数当作已声明项。has_template_data=true 时 data 含参数定义、类型、别名、必填项和说明，可用 language 指定说明语言。
 

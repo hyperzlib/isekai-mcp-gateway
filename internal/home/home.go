@@ -3,7 +3,6 @@ package home
 
 import (
 	"bytes"
-	"encoding/json"
 	"net"
 	"net/http"
 	"net/url"
@@ -16,8 +15,8 @@ import (
 )
 
 type Page struct {
-	SiteTitle, SiteIconURL, Endpoint, EndpointJSON, Title string
-	CloudWarning                                          bool
+	SiteTitle, SiteIconURL, Endpoint, Title string
+	CloudWarning                            bool
 }
 type Service struct {
 	Config *config.Config
@@ -41,15 +40,7 @@ func (s *Service) serve(w http.ResponseWriter, r *http.Request) {
 		title = config.DefaultSiteTitle
 	}
 	endpoint := s.Config.Static.Auth.Gateway.Resource
-	endpointJSON, _ := json.Marshal(endpoint)
-	p := Page{SiteTitle: title, SiteIconURL: icon, Endpoint: endpoint, EndpointJSON: string(endpointJSON), Title: title + " · MCP 接入指南", CloudWarning: cloudWarning(endpoint)}
-	images := "'self'"
-	if config.ValidSiteIcon(icon) {
-		if u, e := url.Parse(icon); e == nil && u.Scheme == "https" && u.Host != "" {
-			images += " " + u.Scheme + "://" + u.Host
-		}
-	}
-	w.Header().Set("Content-Security-Policy", "default-src 'self'; img-src "+images+"; frame-ancestors 'none'; form-action 'self'; base-uri 'none'")
+	p := Page{SiteTitle: title, SiteIconURL: icon, Endpoint: endpoint, Title: title + " · MCP 接入指南", CloudWarning: cloudWarning(endpoint)}
 	w.Header().Set("Cache-Control", "no-store")
 	var out bytes.Buffer
 	if err := s.Pages.RenderHTML(&out, "home", p); err != nil {

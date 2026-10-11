@@ -33,6 +33,8 @@ func (e *OAuthError) Failure() *failure.Error {
 		code = "INVALID_REQUEST"
 	case "invalid_grant":
 		code = "INVALID_GRANT"
+	case "unauthorized_client":
+		code = "UNAUTHORIZED_CLIENT"
 	case "invalid_client":
 		code = "INVALID_CLIENT"
 	case "invalid_scope":
@@ -41,4 +43,14 @@ func (e *OAuthError) Failure() *failure.Error {
 		code = failure.Internal
 	}
 	return &failure.Error{Code: code, Message: e.Error(), Cause: e.Cause}
+}
+
+const BlockedClientDescription = "客户端已被拦截，请联系管理员审核后重新连接。"
+
+// ClientAllowed enforces the administrator block independently of user trust.
+func ClientAllowed(c *Client) error {
+	if c.TrustLevel == TrustBlocked {
+		return (&OAuthError{Code: "unauthorized_client"}).WithDescription(BlockedClientDescription)
+	}
+	return nil
 }

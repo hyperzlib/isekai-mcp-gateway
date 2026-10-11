@@ -10,6 +10,7 @@ import (
 	"isekai-mcp-gateway/internal/home"
 	"isekai-mcp-gateway/internal/httpserver"
 	"isekai-mcp-gateway/internal/httpserver/health"
+	"isekai-mcp-gateway/internal/httpserver/middleware"
 	gatewaymcp "isekai-mcp-gateway/internal/mcp"
 	"isekai-mcp-gateway/internal/mcp/modules/help"
 	"isekai-mcp-gateway/internal/mcp/modules/logout"
@@ -46,15 +47,25 @@ func assemble(c *config.Config, a *zitadel.Service, files *runtimefiles.Files, b
 
 	// 就绪探测同时检查依赖健康与出站配置是否已加载
 	status := &health.Handler{Dependencies: a.Service, OutboundReady: func() bool { return a.Upstream.Get() != nil }}
-	server := httpserver.New(c, a, resourceServer, business,
+	protected := routeFunc(func(r chi.Router) {
+		r.Group(func(r chi.Router) {
+			r.Use(middleware.SecurityHeaders)
+			for _, module := range []httpserver.RouteModule{
+				a, resourceServer, business, pages,
+				&gatewaymcp.Transport{Handler: resourceServer.Bearer(gatewaymcp.BearerMetadata(c.Static.Auth.Gateway.Issuer, stream))}, status,
+			} {
+				module.Routes(r)
+			}
+		})
+	})
+	server := httpserver.New(c, protected,
 		&home.Service{Config: c, Pages: files.Templates, Site: func() (string, string) {
 			if bundle := a.Upstream.Get(); bundle != nil && bundle.Config != nil {
 				return bundle.Config.App.Site.Title, bundle.Config.App.Site.IconURL
 			}
 			return c.App.Site.Title, c.App.Site.IconURL
 		}},
-		routeFunc(func(r chi.Router) { pages.Routes(r) }), files.Assets,
-		&gatewaymcp.Transport{Handler: resourceServer.Bearer(gatewaymcp.BearerMetadata(c.Static.Auth.Gateway.Issuer, stream))}, status)
+		files.Assets)
 	server.MCP = stream
 	return server, nil
 }

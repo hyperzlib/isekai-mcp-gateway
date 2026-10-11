@@ -1,10 +1,10 @@
 package home
 
 import (
-	"encoding/json"
 	"github.com/go-chi/chi/v5"
 	"html"
 	"isekai-mcp-gateway/internal/config"
+	"isekai-mcp-gateway/internal/httpserver/middleware"
 	"isekai-mcp-gateway/internal/templates"
 	"net/http/httptest"
 	"regexp"
@@ -18,25 +18,28 @@ func TestPublicGuideUsesConfiguredEndpointAndEscapesBrand(t *testing.T) {
 		t.Fatal(err)
 	}
 	c := &config.Config{}
-	c.Static.Auth.Gateway.Resource = "https://wiki.example/mcp"
+	c.Static.Auth.Gateway.Resource = "https://wiki.example/mcp?x=\"<value>&y=1"
 	s := &Service{Config: c, Pages: pages, Site: func() (string, string) { return "<script>alert(1)</script>", "" }}
 	router := chi.NewRouter()
 	s.Routes(router)
 	req := httptest.NewRequest("GET", "http://attacker.invalid/", nil)
 	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
+	middleware.Headers(router).ServeHTTP(w, req)
+	if w.Header().Get("Content-Security-Policy") != "" || w.Header().Get("X-Frame-Options") != "" {
+		t.Fatal("public homepage must allow framing")
+	}
 	body := w.Body.String()
-	if w.Code != 200 || !strings.Contains(body, c.Static.Auth.Gateway.Resource) || strings.Contains(body, "attacker.invalid") || strings.Contains(body, "<script>alert(1)</script>") {
+	if w.Code != 200 || !strings.Contains(html.UnescapeString(body), c.Static.Auth.Gateway.Resource) || strings.Contains(body, "attacker.invalid") || strings.Contains(body, "<script>alert(1)</script>") {
 		t.Fatalf("invalid response: %d", w.Code)
 	}
-	for _, match := range regexp.MustCompile(`(?s)<pre><code[^>]*>(.*?)</code></pre>`).FindAllStringSubmatch(body, -1) {
-		snippet := html.UnescapeString(match[1])
-		if strings.HasPrefix(snippet, "{") && !json.Valid([]byte(snippet)) {
-			t.Fatalf("invalid rendered JSON: %s", snippet)
-		}
+	match := regexp.MustCompile(`data-mcp-endpoint="([^"]*)"`).FindStringSubmatch(body)
+	if len(match) != 2 || html.UnescapeString(match[1]) != c.Static.Auth.Gateway.Resource {
+		t.Fatal("configured endpoint not escaped in data attribute")
 	}
-	if strings.Count(body, "class=\"home-guide\"") != 9 {
-		t.Fatal("missing guides")
+	for _, entry := range []string{"id=\"client-list\"", "id=\"guide-retry\"", "<noscript>", "/assets/home/guides/index.json", "vendor/markdown-it.min.js", "vendor/purify.min.js", "guide-renderer.js"} {
+		if !strings.Contains(body, entry) {
+			t.Fatalf("missing dynamic guide entry: %s", entry)
+		}
 	}
 }
 func TestCloudAddressWarning(t *testing.T) {

@@ -129,7 +129,7 @@ func formDestination(raw string) string {
 	if (u.Scheme == "https" || u.Scheme == "http") && u.Host != "" {
 		return u.Scheme + "://" + u.Host
 	}
-	if u.IsAbs() && strings.Contains(u.Scheme, ".") {
+	if u.IsAbs() && domain.PrivateApplicationScheme(u.Scheme) {
 		return u.Scheme + ":"
 	}
 	return ""

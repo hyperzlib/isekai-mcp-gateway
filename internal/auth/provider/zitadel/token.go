@@ -10,6 +10,7 @@ import (
 	"github.com/zitadel/oidc/v3/pkg/oidc"
 
 	"isekai-mcp-gateway/internal/auth/application"
+	"isekai-mcp-gateway/internal/auth/domain"
 )
 
 func (s *Service) TokenEndpoint(w http.ResponseWriter, r *http.Request) {
@@ -50,7 +51,9 @@ func (s *Service) TokenEndpoint(w http.ResponseWriter, r *http.Request) {
 	}
 	client, err := s.GetClientByClientID(r.Context(), id)
 	if err != nil {
-		if errors.Is(err, oidc.ErrServerError()) {
+		if errors.Is(err, oidc.ErrUnauthorizedClient()) {
+			writeJSON(w, r, 400, map[string]string{"error": "unauthorized_client", "error_description": domain.BlockedClientDescription})
+		} else if errors.Is(err, oidc.ErrServerError()) {
 			writeJSON(w, r, 500, map[string]string{"error": "server_error"})
 		} else {
 			writeJSON(w, r, 401, map[string]string{"error": "invalid_client"})

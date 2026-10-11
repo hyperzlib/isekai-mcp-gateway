@@ -16,6 +16,9 @@ func trustKey(account, client string) string { return account + "\x00" + client 
 func (s *Service) Trusted(tx Database, account string, c *Client) (bool, error) {
 	// 预注册（trusted）客户端始终受信；已知与动态注册客户端需账号首次
 	// 确认后留下的信任记录，并核对指纹。
+	if err := domain.ClientAllowed(c); err != nil {
+		return false, err
+	}
 	level := c.TrustLevel
 	if level == "" {
 		level = domain.DefaultTrust(c.Source)
@@ -94,6 +97,13 @@ func (s *Service) Consent(ctx context.Context, a *Interaction, c *Client, reques
 		client, cr, err := s.LoadClient(tx, c.ID, true)
 		if err != nil {
 			return lookupError(err, domain.ErrInvalidGrant())
+		}
+		// Administrator-trusted pending registrations skip user trust confirmation.
+		if cr.State == "pending" && client.TrustLevel == domain.TrustTrusted {
+			if err := s.PersistClient(tx, client, "active", time.Date(9999, 1, 1, 0, 0, 0, 0, time.UTC)); err != nil {
+				return err
+			}
+			cr.State = "active"
 		}
 		if cr.State != "active" {
 			return interactionError("应用尚未激活，请刷新页面并完成应用信任确认后重试。")

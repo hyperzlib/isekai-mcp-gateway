@@ -70,7 +70,7 @@ func (s *Service) validateClient(c *Client, public bool) error {
 		if u.Scheme == "http" && (net.ParseIP(u.Hostname()).IsLoopback() || u.Hostname() == "localhost") {
 			continue
 		}
-		if public && u.Scheme != "http" && u.Scheme != "https" && strings.Contains(u.Scheme, ".") {
+		if public && domain.PrivateApplicationScheme(u.Scheme) {
 			continue
 		}
 		return invalidMetadata("redirect URI requires HTTPS, loopback HTTP, or a private application scheme")
@@ -129,6 +129,9 @@ func (s *Service) LoadClient(tx Database, id string, lock bool) (*Client, persis
 	}
 	c := d.Metadata
 	c.Source, c.Fingerprint, c.SecretHash, c.FetchedAt, c.ResourceClient = d.Source, d.Fingerprint, d.SecretHash, d.FetchedAt, d.ResourceClient
+	if err := domain.ClientAllowed(&c); err != nil {
+		return &c, r, err
+	}
 	return &c, r, nil
 }
 
@@ -147,7 +150,8 @@ func (s *Service) Register(ctx context.Context, c *Client) error {
 	if err := s.validateClient(c, true); err != nil {
 		return err
 	}
-	c.Source, c.TrustLevel = "dcr", domain.TrustUnknown
+	c.Source = "dcr"
+	c.TrustLevel = registrationTrust(c)
 	return s.Store.Database().WithContext(ctx).Transaction(func(tx Database) error {
 		// 注册表锁保证并发注册时的容量计数一致。
 		if err := s.registryLock(tx); err != nil {
@@ -257,7 +261,7 @@ func (s *Service) updateClient(ctx context.Context, c *Client, state string) err
 			c.TrustLevel = domain.TrustLevel(previousRow.TrustLevel)
 			c.LogoURL = previousRow.LogoURL
 		} else {
-			c.TrustLevel = domain.DefaultTrust(c.Source)
+			c.TrustLevel = registrationTrust(c)
 			if c.LogoURL == nil {
 				empty := ""
 				c.LogoURL = &empty
@@ -268,6 +272,9 @@ func (s *Service) updateClient(ctx context.Context, c *Client, state string) err
 		}
 		// 指纹变化表示客户端配置被篡改，需吊销旧授权与信任记录。
 		if exists && previous.Fingerprint != c.Fingerprint {
+			if c.Source == "cimd" {
+				c.TrustLevel = registrationTrust(c)
+			}
 			if err := tx.Table(persistence.Table("grants")).Where("client_id = ?", security.Hash(c.ID)).Update("state", "revoked").Error(); err != nil {
 				return err
 			}
@@ -303,8 +310,8 @@ func (s *Service) GetClientByClientID(ctx context.Context, id string) (*Client, 
 			return nil, failure.Wrap("client.cache", err)
 		}
 		// 命中 5 分钟内的缓存则直接返回，避免频繁拉取上游元数据。
-		if err == nil && cached.FetchedAt.After(time.Now().Add(-5*time.Minute)) {
-			return cached, nil
+		if cached != nil && cached.FetchedAt.After(time.Now().Add(-5*time.Minute)) {
+			return cached, err
 		}
 		b, err := s.FetchMetadata(ctx, id, s.Config.Static.Auth.Gateway)
 		if err != nil {
@@ -320,6 +327,9 @@ func (s *Service) GetClientByClientID(ctx context.Context, id string) (*Client, 
 			return nil, err
 		}
 		if err = s.updateClient(ctx, &c, "active"); err != nil {
+			return nil, err
+		}
+		if err := domain.ClientAllowed(&c); err != nil {
 			return nil, err
 		}
 		return &c, nil
@@ -343,6 +353,10 @@ func (s *Service) GetClientByClientID(ctx context.Context, id string) (*Client, 
 		}
 	}
 	if err != nil {
+		var oauth *domain.OAuthError
+		if errors.As(err, &oauth) && oauth.Code == "unauthorized_client" {
+			return nil, err
+		}
 		return nil, lookupError(err, domain.ErrInvalidClient())
 	}
 	// 刷新活跃时间，避免预注册客户端被空闲回收。
@@ -362,4 +376,16 @@ func (s *Service) AuthorizeClientIDSecret(ctx context.Context, id, secret string
 		return domain.ErrInvalidClient()
 	}
 	return nil
+}
+
+func registrationTrust(c *Client) domain.TrustLevel {
+	if c.Source == "dcr" || c.Source == "cimd" {
+		for _, raw := range c.Redirects {
+			u, err := url.Parse(raw)
+			if err == nil && u.Scheme != "http" && u.Scheme != "https" && !strings.Contains(u.Scheme, ".") {
+				return domain.TrustBlocked
+			}
+		}
+	}
+	return domain.DefaultTrust(c.Source)
 }

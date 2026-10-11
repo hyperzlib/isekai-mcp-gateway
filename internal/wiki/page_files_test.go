@@ -76,7 +76,10 @@ func TestPageReadFileURLsSnapshotAndPagination(t *testing.T) {
 					} else if q.Get("oldid") != "" || q.Get("text") != pending || q.Get("title") != "测试" || q.Get("contentmodel") != "wikitext" {
 						t.Fatalf("pending parse: %v", q)
 					}
-					return Object{"parse": Object{"images": []any{file}}}
+					if q.Get("prop") != "images|links" && q.Get("prop") != "links" {
+						t.Fatalf("files and links were not merged: %v", q)
+					}
+					return Object{"parse": Object{"images": []any{file}, "links": []any{Object{"title": "模板:链接"}}}}
 				}
 				if q.Get("prop") == "imageinfo" {
 					title := q.Get("titles")
@@ -101,6 +104,7 @@ func TestPageReadFileURLsSnapshotAndPagination(t *testing.T) {
 			input := Input{Title: "测试", Limit: 6}
 			combined := ""
 			var files Object
+			var linksHash string
 			for n := 0; n < 20; n++ {
 				out, err := s.Read(context.Background(), c, tool, input)
 				if err != nil {
@@ -111,8 +115,12 @@ func TestPageReadFileURLsSnapshotAndPagination(t *testing.T) {
 				}
 				if n == 0 {
 					files = object(out["file_urls"])
+					linksHash = fingerprint(out["linked_pages"])
 				} else if !reflect.DeepEqual(files, object(out["file_urls"])) {
 					t.Fatal("mapping changed")
+				}
+				if linksHash != fingerprint(out["linked_pages"]) {
+					t.Fatal("page links changed across cursor pages")
 				}
 				combined += str(out["content"])
 				want := pending
@@ -123,6 +131,9 @@ func TestPageReadFileURLsSnapshotAndPagination(t *testing.T) {
 					t.Fatalf("metadata: %#v", out)
 				}
 				input.Cursor = str(out["next_cursor"])
+				if n == 1 {
+					expireReadCache(s)
+				}
 				if input.Cursor == "" {
 					break
 				}
@@ -131,7 +142,7 @@ func TestPageReadFileURLsSnapshotAndPagination(t *testing.T) {
 			if tool == "get_baseline_page" {
 				want, file = baseline, "文件:公开.png"
 			}
-			if combined != want || parses != 1 || len(files) != 1 || files[file] == nil {
+			if combined != want || parses != 2 || len(files) != 1 || files[file] == nil {
 				t.Fatalf("content %q files %#v parses %d", combined, files, parses)
 			}
 		})
@@ -178,6 +189,9 @@ func TestPageReadHTMLHasNoFileURLs(t *testing.T) {
 	}
 	if _, ok := out["file_urls"]; ok {
 		t.Fatal("HTML response includes file mapping")
+	}
+	if _, ok := out["linked_pages"]; ok {
+		t.Fatal("HTML response includes page links")
 	}
 	if out["content"] != "<p>正文</p>" {
 		t.Fatalf("%#v", out)

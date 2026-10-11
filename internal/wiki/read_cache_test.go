@@ -28,8 +28,8 @@ func TestPageContinuationCacheRefreshExpiryAndAccess(t *testing.T) {
 			s, c, requests := additionalReadFixture(t, func(q url.Values) Object {
 				if q.Get("action") == "parse" {
 					parses++
-					if q.Get("prop") == "images" {
-						return Object{"parse": Object{"images": []any{}}}
+					if q.Get("prop") == "images|links" || q.Get("prop") == "links" {
+						return Object{"parse": Object{"images": []any{}, "links": []any{}}}
 					}
 					return Object{"parse": Object{"text": "<p>" + contents[q.Get("oldid")] + "</p>"}}
 				}

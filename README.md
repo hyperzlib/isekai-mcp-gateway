@@ -201,4 +201,65 @@ HTML 变量自动转义；文本变量保持原文；缺失的 map 字段返回�
 
 静态资源模块提供 `/assets/*`，不暴露目录列表与 Go 源文件；模板套件与资源模块分别加载和导出。
 
+### 首页连接教程
+
+首页由浏览器加载 `/assets/home/guides/index.json` 和对应 Markdown，保留服务端输出的介绍与 MCP 地址。教程正文需要 JavaScript；无 JavaScript 时显示索引链接。首页允许 iframe 嵌入。连接地址取自 `auth.gateway.resource`。
+
+索引为顶层数组，顺序即客户端显示顺序：
+
+```json
+[
+  { "id": "codex", "name": "Codex", "icon": "/assets/icons/openai.svg", "guide": "codex.md" }
+]
+```
+
+`id` 使用小写字母、数字与连字符且不能重复，作为 `#codex` 深链接。`guide` 是索引目录内的相对 `.md` 路径，可以使用子目录；不允许 `..`、绝对地址或 URL 参数。图标允许同源地址或 HTTPS 地址，加载失败时使用默认图标。名称和图标仅维护在索引中，正文无需 front matter。
+
+新增客户端时，添加 Markdown 文件及一项索引。图片和正文链接相对教程文件解析。正文支持标准 Markdown、表格和以下折叠语法，不接受原始 HTML，不支持嵌套折叠：
+
+````markdown
+::: details 手动配置
+
+```json title="mcp.json"
+{
+  "mcpServers": {
+    "isekai": { "url": {{mcp_url_json}} }
+  }
+}
+```
+
+:::
+````
+
+代码围栏的 `title="标题"` 用于复制工具栏；每个代码块自动提供复制按钮。宏在文本和代码中替换一次，不在链接目标、图片地址或代码块元信息中替换；未知宏会显示教程内容错误。
+
+| 宏 | 用途 |
+| --- | --- |
+| `{{mcp_url}}` | 普通文本、行内代码或独立地址代码块 |
+| `{{mcp_url_json}}` | JSON 字符串值，已包含双引号和转义，外部不要再加引号 |
+| `{{mcp_url_shell}}` | POSIX Shell 参数，包含单引号及必要转义 |
+| `{{mcp_url_powershell}}` | PowerShell 参数，包含单引号及必要转义 |
+
+使用外部资源目录时，修改 `assets/home/guides/` 文件后刷新首页即可更新，无须重启。页面切换缓存本次访问已加载的正文；刷新时索引与正文重新验证缓存。仅使用内嵌资源时，需要更新二进制。
+
+升级时先运行 `gateway --data-dir <目录> export-assets` 和 `export-templates`，默认补齐新增文件并保留已有文件。目录仍须包含全部内置文件。已有 `home.html`、`home.js`、`home.css` 不会被此命令更新，需要将新版本的对应文件合并到外部目录；可以导出到临时目录进行比较，确认后替换。库版本及许可证位于 `assets/home/vendor/`，无运行时 CDN 或前端构建要求。
+
+浏览器验收可运行 `go run ./internal/home/browser-preview`，该预览仅启动本机首页与资源服务。将输出 URL 设置为 `HOME_TEST_URL` 后执行 `node tests/home-browser.cjs`，需要环境中提供 Playwright 和 Microsoft Edge；`HOME_TEST_BROWSER` 可指定已安装的 Chromium 通道。`HOME_TEST_SCREENSHOTS` 可指定截图目录。预览与生产网关独立，不连接数据库或身份提供方。
+
 页面续页缓存由 `app.json` 的 `mediawiki.pageCacheTtlSeconds` 控制，默认 `600` 秒，必须为正整数。缓存覆盖页面源码、HTML、章节和依赖解析结果，按站点、用户凭据、授权与配置隔离。读取第一页始终查询上游并刷新对应缓存；提交编辑请求后清理该页面所有用户的缓存，后续读取重新获取。续页命中时仍查询页面权限及正式修订可见性；缓存过期或进程重启后按游标固定的修订重新获取，并校验内容或解析哈希。缓存使用进程内存，最多保留 256 项、64 MiB；命中不延长有效期。
+
+## Administrator review of custom OAuth schemes
+
+DCR and CIMD clients with any custom redirect scheme lacking a period (for example `workbuddy://`) are registered with `trust_level = 'blocked'`. Registration succeeds, but authorization, existing interactions, code/token exchange and token use are denied until administrator review. `trust_level` now controls this block as well as application trust behavior. Blocked browser authorization requests display the built-in HTML error page with HTTP 400. The token endpoint returns the OAuth JSON error `unauthorized_client`. The Chinese display label is 拦截.
+
+To approve one reviewed registration, use its exact `oauth_clients.id` value (the SHA-256 hash of the public client ID):
+
+```sql
+SELECT id, client_name, trust_level, state, expires_at FROM oauth_clients WHERE trust_level = 'blocked';
+UPDATE oauth_clients SET trust_level = 'unknown'
+WHERE id = '<exact database row id>' AND trust_level = 'blocked';
+```
+
+`unknown` retains user trust confirmation and consent. Administrators may also select the existing `known` or `trusted` trust behavior. Matching DCR retries retain this decision; other clients using the same scheme require their own review. Pending DCR registrations expire after 24 hours; approval does not extend that expiry. CIMD refreshes retain the decision for an identical fingerprint and reassess changed metadata. Reblocking a client immediately prevents subsequent OAuth and token operations; it does not delete its records.
+
+Deploy migration `00004_oauth_client_blocked.sql` before running the updated gateway. It preserves registrations. Its rollback converts blocked clients to unknown before removing the enum value, so review such clients before rolling back.

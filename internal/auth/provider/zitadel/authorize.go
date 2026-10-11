@@ -12,6 +12,7 @@ import (
 	"github.com/zitadel/oidc/v3/pkg/op"
 
 	"isekai-mcp-gateway/internal/auth/application"
+	"isekai-mcp-gateway/internal/auth/domain"
 )
 
 func (s *Service) Authorize(w http.ResponseWriter, r *http.Request) {
@@ -21,7 +22,9 @@ func (s *Service) Authorize(w http.ResponseWriter, r *http.Request) {
 	}
 	client, err := s.GetClientByClientID(r.Context(), r.Form.Get("client_id"))
 	if err != nil {
-		if errors.Is(err, oidc.ErrServerError()) {
+		if errors.Is(err, oidc.ErrUnauthorizedClient()) {
+			s.PageError(w, r, domain.BlockedClientDescription, http.StatusBadRequest)
+		} else if errors.Is(err, oidc.ErrServerError()) {
 			writeJSON(w, r, 500, map[string]string{"error": "server_error"})
 		} else {
 			writeJSON(w, r, 400, map[string]string{"error": "invalid_client"})

@@ -303,7 +303,8 @@ func (s *Service) Read(ctx context.Context, c *Call, name string, i Input) (Obje
 	// 页面与修订类工具单独处理，其余操作走通用列表分页。
 	switch name {
 	case "get_latest_page", "get_baseline_page":
-		return s.readPage(ctx, c, name, i)
+		out, err := s.readPage(ctx, c, name, i)
+		return boundedRead(c, out, err)
 	case "get_revision":
 		v, e := s.revision(ctx, c, i.RevisionID)
 		if e != nil {

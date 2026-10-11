@@ -31,7 +31,7 @@ func OutputSchema(name string) map[string]any {
 		"commit_edit": "edit_id url url_refresh_warning outcome changed revision_id content_source version title page_id base_revision_id moderation_base_revision_id mod_id temp_revision_id chain_version has_changes", "close_edit": "edit_id closed close_requested version", "prepare_upload": "upload_id state upload_url method headers expires_at staged_expires_at next_tool warnings", "commit_upload": "upload_id state filename imageinfo",
 	}
 	for _, name := range []string{"get_latest_page", "get_baseline_page"} {
-		fields[name] += " url requested_title redirect_chain resources next_cursor file_urls"
+		fields[name] += " url requested_title redirect_chain resources next_cursor file_urls linked_pages"
 	}
 	// 编辑类工具共享同一套状态字段。
 	status := "edit_id page_id title url kind state version has_changes close_requested expires_at base_revision_id moderation_base_revision_id content_source content_hash content_bytes total_lines conflict_count conflict_ranges conflict_markers_valid resources loading error changed operations_applied changed_ranges outcome"
@@ -83,6 +83,9 @@ func OutputSchema(name string) map[string]any {
 			v["items"] = map[string]any{}
 		}
 		props[k] = map[string]any{"anyOf": []any{v, map[string]any{"type": "null"}}}
+		if k == "linked_pages" {
+			props[k] = map[string]any{"type": "array", "items": map[string]any{"type": "string"}, "description": "Complete deduplicated page link titles from the source snapshot, including template-expanded and missing page links; repeated on each content page."}
+		}
 	}
 
 	// additionalProperties=true 允许 API 追加字段而不破坏稳定信封。

@@ -30,6 +30,7 @@ func (s *Service) readPage(ctx context.Context, c *Call, name string, i Input) (
 	scope := c.cacheScope(name, filter)
 	generation := s.pageCache.begin(scope, i.Cursor == "")
 	cacheID := str(cur.Continue["cache_id"])
+	linksHash := str(cur.Continue["linked_pages_hash"])
 	var cachedText string
 	cacheHit := false
 	var v Object
@@ -149,10 +150,22 @@ func (s *Service) readPage(ctx context.Context, c *Call, name string, i Input) (
 		}
 	}
 
-	if format == "source" && i.Cursor == "" {
-		v["file_urls"], x = s.pageFileURLs(ctx, c, v)
+	// Keep large link lists in the snapshot cache, with only their hash in cursors.
+	delete(v, "linked_pages_hash")
+	if format == "source" && (i.Cursor == "" || !cacheHit || v["linked_pages"] == nil) {
+		files, links, err := s.pageSourceMetadata(ctx, c, v, i.Cursor == "")
+		x = err
 		if x != nil {
 			return nil, x
+		}
+		hash := fingerprint(links)
+		if linksHash != "" && linksHash != hash {
+			return nil, errCode("SNAPSHOT_UNAVAILABLE", "Parsed page links changed. Restart the paginated read.")
+		}
+		linksHash = hash
+		v["linked_pages"] = links
+		if i.Cursor == "" {
+			v["file_urls"] = files
 		}
 	}
 
@@ -215,11 +228,14 @@ func (s *Service) readPage(ctx context.Context, c *Call, name string, i Input) (
 	// 除内容与游标外的字段作为快照元数据存入游标。
 	metadata := Object{}
 	for k, value := range v {
-		if k != "content" && k != "current_user" && k != "next_cursor" {
+		if k != "content" && k != "current_user" && k != "next_cursor" && k != "linked_pages" {
 			metadata[k] = value
 		}
 	}
 	metadata["cache_id"] = cacheID
+	if format == "source" {
+		metadata["linked_pages_hash"] = linksHash
+	}
 	delete(v, "cache_id")
 	fragment, x := fragment(text, i.Offset, i.Limit, c.Config.App.Results.TextMax)
 	if x != nil {

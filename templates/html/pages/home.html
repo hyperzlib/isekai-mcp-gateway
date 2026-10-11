@@ -7,6 +7,10 @@
     <title>{{.Title}}</title>
     <link rel="stylesheet" href="/assets/auth/style.css">
     <link rel="stylesheet" href="/assets/home/home.css">
+    <script src="/assets/home/vendor/markdown-it.min.js" defer></script>
+    <script src="/assets/home/vendor/markdown-it-container.min.js" defer></script>
+    <script src="/assets/home/vendor/purify.min.js" defer></script>
+    <script src="/assets/home/guide-renderer.js" defer></script>
     <script src="/assets/home/home.js" defer></script>
 </head>
 
@@ -22,219 +26,28 @@
         <section class="home-endpoint" aria-label="MCP 连接地址">
             <div><span class="home-label">服务器地址</span><code id="endpoint">{{.Endpoint}}</code><small>把这一条地址复制给任意支持 MCP 的客户端即可</small></div><button type="button" data-copy="endpoint">复制地址</button>
         </section>
-        <section class="home-connect">
+        <section class="home-connect" data-mcp-endpoint="{{.Endpoint}}">
             <nav class="home-clients" aria-label="选择客户端">
-                <h2>选择你的客户端</h2>
-                <p>选择后查看添加步骤。</p>
-                <a href="#cherry-studio" data-client="cherry-studio"><img class="home-client-logo" src="/assets/icons/cherry-studio.png" alt="Cherry Studio">Cherry Studio</a>
-                <a href="#opencode" data-client="opencode"><img class="home-client-logo" src="/assets/icons/opencode.png" alt="OpenCode">OpenCode</a>
-                <a href="#eigent" data-client="eigent"><img class="home-client-logo" src="/assets/icons/eigent.svg" alt="Eigent">Eigent</a>
-                <a href="#chatgpt" data-client="chatgpt"><img class="home-client-logo" src="/assets/icons/openai.svg" alt="ChatGPT">ChatGPT</a>
-                <a href="#claude" data-client="claude"><img class="home-client-logo" src="/assets/icons/claudecode-color.svg" alt="Claude">Claude</a>
-                <a href="#codex" data-client="codex"><img class="home-client-logo" src="/assets/icons/openai.svg" alt="Codex">Codex</a>
-                <a href="#claude-code" data-client="claude-code"><img class="home-client-logo" src="/assets/icons/claudecode-color.svg" alt="Claude Code">Claude Code</a>
-                <a href="#cursor" data-client="cursor"><img class="home-client-logo" src="/assets/icons/cursor.svg" alt="Cursor">Cursor</a>
-                <a href="#vscode" data-client="vscode"><img class="home-client-logo" src="/assets/icons/vscode.png" alt="VS Code">VS Code</a>
+                <div class="home-clients-scroll">
+                <div class="home-clients-content">
+                <h2>选择你的客户端</h2><p>选择后查看添加步骤。</p>
+                <div id="client-list"></div>
+                </div>
+                </div>
             </nav>
             <div class="home-guides">
-                <article class="home-guide" id="cherry-studio" aria-labelledby="title-cherry-studio">
-                    <div class="home-guide-head"><img class="home-client-logo home-client-logo--lg" src="/assets/icons/cherry-studio.png" alt="cherry-studio"><div><span class="home-label">添加 MCP 服务器</span>
-                            <h2 id="title-cherry-studio">Cherry Studio</h2>
-                        </div>
+                <article class="home-guide" id="client-guide" hidden>
+                    <div class="home-guide-scroll">
+                    <div class="home-guide-content">
+                    <div class="home-guide-state">
+                        <span class="home-guide-spinner" aria-hidden="true" hidden></span>
+                        <p id="guide-status" role="status" aria-live="polite"></p>
+                        <button id="guide-retry" type="button" hidden>重试</button>
                     </div>
-                    <ol>
-                        <li>打开 设置 → MCP 服务器 → 添加。</li>
-                        <li>类型选择 Streamable HTTP，填入下方的服务器 URL，保存并开启开关。</li>
-                        <li>首次连接时会打开浏览器要求登录本站并确认权限，登录一次即可。</li>
-                        <li>在对话的工具面板中确认已启用本服务器，然后就可以直接让 AI 使用了。</li>
-                    </ol>
-                    <div class="home-snippet">
-                        <div><span>服务器 URL</span><button type="button" data-copy="snippet-cherry-studio-0">复制</button></div>
-                        <pre><code id="snippet-cherry-studio-0">{{.Endpoint}}</code></pre>
                     </div>
-                    <a class="home-doc" href="https://docs.cherryai.com.cn/advanced-basic/extensions/mcp" target="_blank" rel="noopener noreferrer">Cherry Studio 官方文档 ↗</a>
+                    </div>
                 </article>
-
-                <article class="home-guide" id="opencode" aria-labelledby="title-opencode">
-                    <div class="home-guide-head"><img class="home-client-logo home-client-logo--lg" src="/assets/icons/opencode.png" alt="opencode"><div><span class="home-label">添加 MCP 服务器</span>
-                            <h2 id="title-opencode">OpenCode</h2>
-                        </div>
-                    </div>
-                    <ol>
-                        <li>把下方的配置合并到 opencode.json 中。</li>
-                        <li>运行授权命令，在浏览器中登录本站并确认权限。</li>
-                        <li>回到 OpenCode，把 Wiki 相关任务交给它即可。</li>
-                    </ol>
-                    <div class="home-snippet">
-                        <div><span>opencode.json</span><button type="button" data-copy="snippet-opencode-0">复制</button></div>
-                        <pre><code id="snippet-opencode-0">{
-  "$schema": "https://opencode.ai/config.json",
-  "mcp": {
-    "isekai": {
-      "enabled": true,
-      "type": "remote",
-      "url": {{.EndpointJSON}}
-    }
-  }
-}</code></pre>
-                    </div>
-                    <div class="home-snippet">
-                        <div><span>授权与检查</span><button type="button" data-copy="snippet-opencode-1">复制</button></div>
-                        <pre><code id="snippet-opencode-1">opencode mcp auth isekai
-opencode mcp list</code></pre>
-                    </div>
-                    <details class="home-snippet-toggle"><summary>用的是 OpenCode 新版（V2 配置格式）？</summary>
-                    <div class="home-snippet">
-                        <div><span>opencode.jsonc</span><button type="button" data-copy="snippet-opencode-2">复制</button></div>
-                        <pre><code id="snippet-opencode-2">{
-  "$schema": "https://opencode.ai/config.json",
-  "mcp": {
-    "servers": {
-      "isekai": {
-        "type": "remote",
-        "url": {{.EndpointJSON}}
-      }
-    }
-  }
-}</code></pre>
-                    </div>
-                    <p class="home-note">添加后如需登录，在 OpenCode 中输入 /mcps，选择本服务器并登录。</p>
-                    </details>
-                    <a class="home-doc" href="https://opencode.ai/docs/mcp-servers/" target="_blank" rel="noopener noreferrer">OpenCode 官方文档 ↗</a>
-                </article>
-
-                <article class="home-guide" id="eigent" aria-labelledby="title-eigent">
-                    <div class="home-guide-head"><img class="home-client-logo home-client-logo--lg" src="/assets/icons/eigent.svg" alt="eigent"><div><span class="home-label">添加 MCP 服务器</span>
-                            <h2 id="title-eigent">Eigent</h2>
-                        </div>
-                    </div>
-                    <ol>
-                        <li>打开 Eigent 的 Connectors 页面。</li>
-                        <li>在 Custom MCP servers 中添加远程服务，填入下方的服务器 URL。</li>
-                        <li>首次连接时按提示在浏览器中登录本站并完成授权。</li>
-                        <li>在 Space 的 tool selector 中勾选本连接器，AI 就能使用 Wiki 了。</li>
-                    </ol>
-                    <div class="home-snippet">
-                        <div><span>服务器 URL</span><button type="button" data-copy="snippet-eigent-0">复制</button></div>
-                        <pre><code id="snippet-eigent-0">{{.Endpoint}}</code></pre>
-                    </div>
-                    <a class="home-doc" href="https://test.eigent.ai/docs/mcp" target="_blank" rel="noopener noreferrer">Eigent 官方文档 ↗</a>
-                </article>
-
-                <article class="home-guide" id="chatgpt" aria-labelledby="title-chatgpt">
-                    <div class="home-guide-head"><img class="home-client-logo home-client-logo--lg" src="/assets/icons/openai.svg" alt="chatgpt"><div><span class="home-label">添加 MCP 服务器</span>
-                            <h2 id="title-chatgpt">ChatGPT</h2>
-                        </div>
-                    </div>
-                    <ol>
-                        <li>打开 ChatGPT Plugins 设置，点击加号 → Add custom MCP server。</li>
-                        <li>填写名称，在 Connection 中选择 OAuth，并粘贴下方的 Server URL。</li>
-                        <li>点击 Create as a plugin，首次连接时登录本站并确认权限。</li>
-                        <li>安装创建的插件，在新对话中输入 @ 选择它即可使用。</li>
-                    </ol>
-                    <div class="home-snippet">
-                        <div><span>Server URL</span><button type="button" data-copy="snippet-chatgpt-0">复制</button></div>
-                        <pre><code id="snippet-chatgpt-0">{{.Endpoint}}</code></pre>
-                    </div>
-                    <a class="home-doc" href="https://developers.openai.com/api/docs/guides/custom-mcp-server" target="_blank" rel="noopener noreferrer">ChatGPT 官方文档 ↗</a>
-                </article>
-
-                <article class="home-guide" id="claude" aria-labelledby="title-claude">
-                    <div class="home-guide-head"><img class="home-client-logo home-client-logo--lg" src="/assets/icons/claudecode-color.svg" alt="claude"><div><span class="home-label">添加 MCP 服务器</span>
-                            <h2 id="title-claude">Claude</h2>
-                        </div>
-                    </div>
-                    <ol>
-                        <li>打开 Settings → Connectors → Add custom connector。</li>
-                        <li>填写名称，并粘贴下方的 Remote MCP server URL，保存。</li>
-                        <li>首次连接时在浏览器中登录本站并确认权限。</li>
-                        <li>在对话中启用该连接器，然后就可以使用 Wiki 了。</li>
-                    </ol>
-                    <div class="home-snippet">
-                        <div><span>Remote MCP server URL</span><button type="button" data-copy="snippet-claude-0">复制</button></div>
-                        <pre><code id="snippet-claude-0">{{.Endpoint}}</code></pre>
-                    </div>
-                    <a class="home-doc" href="https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp" target="_blank" rel="noopener noreferrer">Claude 官方文档 ↗</a>
-                </article>
-
-                <article class="home-guide" id="codex" aria-labelledby="title-codex">
-                    <div class="home-guide-head"><img class="home-client-logo home-client-logo--lg" src="/assets/icons/openai.svg" alt="codex"><div><span class="home-label">添加 MCP 服务器</span>
-                            <h2 id="title-codex">Codex</h2>
-                        </div>
-                    </div>
-                    <ol>
-                        <li>运行下方的添加命令，再运行授权命令完成登录。</li>
-                        <li>回到 Codex，把 Wiki 相关任务交给它即可。</li>
-                    </ol>
-                    <div class="home-snippet">
-                        <div><span>添加与授权命令</span><button type="button" data-copy="snippet-codex-0">复制</button></div>
-                        <pre><code id="snippet-codex-0">codex mcp add isekai --url {{.Endpoint}}
-codex mcp login isekai
-codex mcp list</code></pre>
-                    </div>
-                    <a class="home-doc" href="https://learn.chatgpt.com/docs/extend/mcp?surface=cli" target="_blank" rel="noopener noreferrer">Codex 官方文档 ↗</a>
-                </article>
-
-                <article class="home-guide" id="claude-code" aria-labelledby="title-claude-code">
-                    <div class="home-guide-head"><img class="home-client-logo home-client-logo--lg" src="/assets/icons/claudecode-color.svg" alt="claude-code"><div><span class="home-label">添加 MCP 服务器</span>
-                            <h2 id="title-claude-code">Claude Code</h2>
-                        </div>
-                    </div>
-                    <ol>
-                        <li>运行下方的添加命令。</li>
-                        <li>在 Claude Code 中运行 /mcp，选择本服务器并在浏览器中完成登录授权。</li>
-                        <li>回到会话中，把 Wiki 相关任务交给它即可。</li>
-                    </ol>
-                    <div class="home-snippet">
-                        <div><span>添加命令</span><button type="button" data-copy="snippet-claude-code-0">复制</button></div>
-                        <pre><code id="snippet-claude-code-0">claude mcp add --transport http --scope user isekai {{.Endpoint}}</code></pre>
-                    </div>
-                    <a class="home-doc" href="https://code.claude.com/docs/en/mcp" target="_blank" rel="noopener noreferrer">Claude Code 官方文档 ↗</a>
-                </article>
-
-                <article class="home-guide" id="cursor" aria-labelledby="title-cursor">
-                    <div class="home-guide-head"><img class="home-client-logo home-client-logo--lg" src="/assets/icons/cursor.svg" alt="cursor"><div><span class="home-label">添加 MCP 服务器</span>
-                            <h2 id="title-cursor">Cursor</h2>
-                        </div>
-                    </div>
-                    <ol>
-                        <li>在 Cursor 设置中打开 MCP 页面，点击添加远程 MCP 服务器。</li>
-                        <li>填入下方的 URL，保存并开启开关，按提示在浏览器中完成授权。</li>
-                        <li>在 Agent 对话中就能使用 Wiki 工具了。</li>
-                    </ol>
-                    <details class="home-snippet-toggle"><summary>偏好手动编辑配置文件？</summary>
-                    <div class="home-snippet">
-                        <div><span>~/.cursor/mcp.json</span><button type="button" data-copy="snippet-cursor-0">复制</button></div>
-                        <pre><code id="snippet-cursor-0">{
-  "mcpServers": {
-    "isekai": {
-      "url": {{.EndpointJSON}}
-    }
-  }
-}</code></pre>
-                    </div>
-                    <p class="home-note">把以上配置合并进mcp.json并重启 Cursor 即可。</p>
-                    </details>
-                    <a class="home-doc" href="https://cursor.com/docs/mcp" target="_blank" rel="noopener noreferrer">Cursor 官方文档 ↗</a>
-                </article>
-
-                <article class="home-guide" id="vscode" aria-labelledby="title-vscode">
-                    <div class="home-guide-head"><img class="home-client-logo home-client-logo--lg" src="/assets/icons/vscode.png" alt="vscode"><div><span class="home-label">添加 MCP 服务器</span>
-                            <h2 id="title-vscode">VS Code</h2>
-                        </div>
-                    </div>
-                    <ol>
-                        <li>打开命令面板，运行 MCP: Add Server。</li>
-                        <li>类型选择 HTTP，填入下方的 URL 和名称 isekai。</li>
-                        <li>按提示在浏览器中完成登录授权。</li>
-                        <li>在 Agent 对话的工具面板中启用 Wiki 工具即可。</li>
-                    </ol>
-                    <div class="home-snippet">
-                        <div><span>服务器 URL</span><button type="button" data-copy="snippet-vscode-0">复制</button></div>
-                        <pre><code id="snippet-vscode-0">{{.Endpoint}}</code></pre>
-                    </div>
-                    <a class="home-doc" href="https://code.visualstudio.com/docs/agent-customization/mcp-servers" target="_blank" rel="noopener noreferrer">VS Code 官方文档 ↗</a>
-                </article>
+                <noscript>请启用 JavaScript 查看连接教程。<a href="/assets/home/guides/index.json">查看教程索引</a></noscript>
             </div>
         </section>
         <section class="home-start">

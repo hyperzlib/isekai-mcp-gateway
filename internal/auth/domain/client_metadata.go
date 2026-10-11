@@ -13,6 +13,7 @@ import (
 type TrustLevel string
 
 const (
+	TrustBlocked TrustLevel = "blocked"
 	TrustUnknown TrustLevel = "unknown"
 	TrustKnown   TrustLevel = "known"
 	TrustTrusted TrustLevel = "trusted"
@@ -73,4 +74,14 @@ type StoredClient struct {
 	Fingerprint    string
 	FetchedAt      time.Time
 	ResourceClient bool
+}
+
+// PrivateApplicationScheme excludes web, script, content and operating-system URI handlers.
+func PrivateApplicationScheme(scheme string) bool {
+	switch strings.ToLower(scheme) {
+	case "", "http", "https", "javascript", "vbscript", "data", "file", "blob", "about", "ftp", "mailto", "tel":
+		return false
+	default:
+		return true
+	}
 }

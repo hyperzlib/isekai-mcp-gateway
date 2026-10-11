@@ -54,6 +54,7 @@ func TestFormDestination(t *testing.T) {
 		"com.example.app:/callback":                     "com.example.app:",
 		"https://user:password@client.example/callback": "",
 		"https://client.example/callback#fragment":      "",
+		"workbuddy://workbuddy/oauth/callback":          "workbuddy:",
 		"javascript:alert(1)":                           "",
 		"https://client.example/;form-action *":         "",
 	} {

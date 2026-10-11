@@ -1,0 +1,56 @@
+[
+  {
+    "id": "cherry-studio",
+    "name": "Cherry Studio",
+    "icon": "/assets/icons/cherry-studio.png",
+    "guide": "cherry-studio.md"
+  },
+  {
+    "id": "opencode",
+    "name": "OpenCode",
+    "icon": "/assets/icons/opencode.png",
+    "guide": "opencode.md"
+  },
+  {
+    "id": "eigent",
+    "name": "Eigent",
+    "icon": "/assets/icons/eigent.svg",
+    "guide": "eigent.md"
+  },
+  {
+    "id": "chatgpt",
+    "name": "ChatGPT",
+    "icon": "/assets/icons/openai.svg",
+    "guide": "chatgpt.md"
+  },
+  {
+    "id": "claude",
+    "name": "Claude",
+    "icon": "/assets/icons/claudecode-color.svg",
+    "guide": "claude.md"
+  },
+  {
+    "id": "codex",
+    "name": "Codex",
+    "icon": "/assets/icons/openai.svg",
+    "guide": "codex.md"
+  },
+  {
+    "id": "claude-code",
+    "name": "Claude Code",
+    "icon": "/assets/icons/claudecode-color.svg",
+    "guide": "claude-code.md"
+  },
+  {
+    "id": "cursor",
+    "name": "Cursor",
+    "icon": "/assets/icons/cursor.svg",
+    "guide": "cursor.md"
+  },
+  {
+    "id": "vscode",
+    "name": "VS Code",
+    "icon": "/assets/icons/vscode.png",
+    "guide": "vscode.md"
+  }
+]

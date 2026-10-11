@@ -2,6 +2,26 @@ package wikicommon
 
 import "testing"
 
+func TestPageLinkedPagesSchemas(t *testing.T) {
+	for _, name := range []string{"get_latest_page", "get_baseline_page"} {
+		s := resolveSchema(OutputSchema(name))
+		links := make([]any, 100)
+		for n := range links {
+			links[n] = "帮助:链接"
+		}
+		for _, value := range []map[string]any{{"linked_pages": []any{}}, {"linked_pages": links}} {
+			if err := s.Validate(value); err != nil {
+				t.Fatal(name, err)
+			}
+		}
+		for _, value := range []map[string]any{{"linked_pages": nil}, {"linked_pages": "title"}, {"linked_pages": []any{1}}} {
+			if s.Validate(value) == nil {
+				t.Fatal(name, "invalid linked_pages accepted")
+			}
+		}
+	}
+}
+
 func TestResolvePageURLSchema(t *testing.T) {
 	s := resolveSchema(Schema("resolve_page_url"))
 	for _, input := range []map[string]any{{"url": "/首页"}, {"url": "https://wiki.test/index.php?title=首页"}} {

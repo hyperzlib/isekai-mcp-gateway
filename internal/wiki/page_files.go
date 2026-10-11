@@ -50,7 +50,11 @@ func (s *Service) pageFileURLs(ctx context.Context, c *Call, snapshot Object) (O
 	if err != nil {
 		return nil, err
 	}
-	images, ok := object(v["parse"])["images"].([]any)
+	return s.parsedFileURLs(ctx, c, object(v["parse"]))
+}
+
+func (s *Service) parsedFileURLs(ctx context.Context, c *Call, parsed Object) (Object, error) {
+	images, ok := parsed["images"].([]any)
 	if !ok {
 		return nil, errCode("UPSTREAM_RESPONSE_INVALID", "Wiki omitted parsed files.")
 	}

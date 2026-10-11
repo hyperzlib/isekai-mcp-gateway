@@ -248,7 +248,97 @@ func TestMySQLOAuthIntegration(t *testing.T) {
 	if err = store.DB.Table("oauth_clients").Where("id = ?", security.Hash(active.ID)).Update("state", "disabled").Error; err != nil {
 		t.Fatal(err)
 	}
-	t.Run("authorization_and_tokens", func(t *testing.T) { testAuthorization(t, svc, store, fresh) })
+	t.Run("blocked_registration", func(t *testing.T) {
+		makeClient := func() *domain.Client {
+			return &domain.Client{Name: "WorkBuddy Connector", Redirects: []string{"workbuddy://workbuddy/mcp/custom-mcp%3Aisekaiwiki/oauth/callback"}, Grants: []string{"authorization_code", "refresh_token"}, Responses: []string{"code"}, TokenAuthMethod: "none", Scope: "mcp:access"}
+		}
+		blocked := makeClient()
+		if err := svc.Register(ctx, blocked); err != nil {
+			t.Fatal(err)
+		}
+		if blocked.TrustLevel != domain.TrustBlocked {
+			t.Fatal("not blocked")
+		}
+		var before persistence.Row
+		if err := store.DB.Table("oauth_clients").Where("id = ?", security.Hash(blocked.ID)).Take(&before).Error; err != nil {
+			t.Fatal(err)
+		}
+		if before.State != "pending" || time.Until(before.ExpiresAt) > 24*time.Hour {
+			t.Fatal("pending expiry changed")
+		}
+		if _, err := svc.GetClientByClientID(ctx, blocked.ID); err == nil {
+			t.Fatal("blocked client accepted")
+		}
+		if err := store.DB.Table("oauth_clients").Where("id = ?", before.ID).Update("trust_level", "unknown").Error; err != nil {
+			t.Fatal(err)
+		}
+		retry := makeClient()
+		if err := svc.Register(ctx, retry); err != nil {
+			t.Fatal(err)
+		}
+		if retry.ID != blocked.ID || retry.TrustLevel != domain.TrustUnknown {
+			t.Fatal("admin approval overwritten")
+		}
+		var after persistence.Row
+		store.DB.Table("oauth_clients").Where("id = ?", before.ID).Take(&after)
+		if !after.ExpiresAt.Equal(before.ExpiresAt) {
+			t.Fatal("retry extended expiry")
+		}
+		if _, err := svc.GetClientByClientID(ctx, retry.ID); err != nil {
+			t.Fatal(err)
+		}
+		other := makeClient()
+		other.Name = "Other app"
+		if err := svc.Register(ctx, other); err != nil {
+			t.Fatal(err)
+		}
+		if other.TrustLevel != domain.TrustBlocked {
+			t.Fatal("scheme globally approved")
+		}
+		if err := store.DB.Table("oauth_clients").Where("id = ?", before.ID).Update("expires_at", time.Now().Add(-time.Second)).Error; err != nil {
+			t.Fatal(err)
+		}
+		fresh := makeClient()
+		if err := svc.Register(ctx, fresh); err != nil {
+			t.Fatal(err)
+		}
+		if fresh.ID == retry.ID || fresh.TrustLevel != domain.TrustBlocked {
+			t.Fatal("expired approval reused")
+		}
+	})
+	t.Run("authorization_and_tokens", func(t *testing.T) {
+		workbuddy := &domain.Client{Name: "WorkBuddy flow", Redirects: []string{"workbuddy://workbuddy/mcp/custom-mcp%3Aisekaiwiki/oauth/callback"}, Grants: []string{"authorization_code", "refresh_token"}, Scope: "mcp:access offline_access"}
+		if err := svc.Register(ctx, workbuddy); err != nil {
+			t.Fatal(err)
+		}
+		if err := store.DB.Table("oauth_clients").Where("id = ?", security.Hash(workbuddy.ID)).Update("trust_level", "unknown").Error; err != nil {
+			t.Fatal(err)
+		}
+		allowed, err := svc.GetClientByClientID(ctx, workbuddy.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		testAuthorization(t, svc, store, allowed)
+	})
+	t.Run("blocked_migration_roundtrip", func(t *testing.T) {
+		id := security.Hash(fresh.ID)
+		if err := store.DB.Table("oauth_clients").Where("id = ?", id).Update("trust_level", "blocked").Error; err != nil {
+			t.Fatal(err)
+		}
+		if _, err := provider.DownTo(ctx, 3); err != nil {
+			t.Fatal(err)
+		}
+		var level string
+		if err := store.SQL.QueryRow("SELECT trust_level FROM oauth_clients WHERE id = ?", id).Scan(&level); err != nil || level != "unknown" {
+			t.Fatal("rollback failed", level, err)
+		}
+		if err := store.Migrate(ctx); err != nil {
+			t.Fatal(err)
+		}
+		if _, err := svc.GetClientByClientID(ctx, fresh.ID); err != nil {
+			t.Fatal("migration lost client", err)
+		}
+	})
 	t.Run("client_column_authority", func(t *testing.T) {
 		loaded, err := svc.GetClientByClientID(ctx, fresh.ID)
 		if err != nil {
@@ -285,6 +375,46 @@ func testAuthorization(t *testing.T, s *application.Service, store *persistence.
 	if err := s.Store.Create(db, "sessions", session.ID, session, persistence.Row{AccountID: account.ID, State: "active", ExpiresAt: exp}); err != nil {
 		t.Fatal(err)
 	}
+	t.Run("administrator_trusted_pending", func(t *testing.T) {
+		v := *c
+		v.ID = ""
+		v.Name = "Administrator trusted WorkBuddy"
+		if err := s.Register(ctx, &v); err != nil {
+			t.Fatal(err)
+		}
+		if err := store.DB.Table("oauth_clients").Where("id = ?", security.Hash(v.ID)).Update("trust_level", "trusted").Error; err != nil {
+			t.Fatal(err)
+		}
+		trusted, err := s.GetClientByClientID(ctx, v.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		reqctx := context.WithValue(ctx, application.RequestKey{}, application.RequestInfo{Browser: "browser", Resource: "resource", ClientID: v.ID})
+		interaction, err := s.CreateAuthRequest(reqctx, &domain.AuthorizationRequest{ClientID: v.ID, RedirectURI: v.Redirects[0], Scopes: domain.SpaceDelimited{"mcp:access"}}, "")
+		if err != nil {
+			t.Fatal(err)
+		}
+		interaction.AccountID = account.ID
+		interaction.SessionID = session.ID
+		if err := s.Store.Put(db, "interactions", interaction.ID, interaction, persistence.Row{AccountID: account.ID, State: "authenticated", ExpiresAt: exp}); err != nil {
+			t.Fatal(err)
+		}
+		if err := s.Consent(reqctx, interaction, trusted, []string{"mcp:access"}); err != nil {
+			t.Fatal(err)
+		}
+		_, row, err := s.LoadClient(db, v.ID, false)
+		if err != nil || row.State != "active" {
+			t.Fatal("trusted pending not activated", err)
+		}
+		// Keep this separate flow out of the management-list assertions below.
+		loaded, err := s.AuthRequestByID(reqctx, interaction.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if err := s.Store.Delete(db, "grants", loaded.GrantID); err != nil {
+			t.Fatal(err)
+		}
+	})
 	ctx = context.WithValue(ctx, application.RequestKey{}, application.RequestInfo{Browser: "browser", Resource: "resource", ClientID: c.ID})
 	a, err := s.CreateAuthRequest(ctx, &domain.AuthorizationRequest{ClientID: c.ID, RedirectURI: c.Redirects[0], Scopes: domain.SpaceDelimited{"mcp:access"}}, "")
 	if err != nil {
@@ -296,6 +426,17 @@ func testAuthorization(t *testing.T, s *application.Service, store *persistence.
 	if err = s.Store.Put(db, "interactions", a.ID, a, persistence.Row{AccountID: account.ID, State: "authenticated", ExpiresAt: exp}); err != nil {
 		t.Fatal(err)
 	}
+	setLevel := func(level string) {
+		t.Helper()
+		if err := store.DB.Table("oauth_clients").Where("id = ?", security.Hash(c.ID)).Update("trust_level", level).Error; err != nil {
+			t.Fatal(err)
+		}
+	}
+	setLevel("blocked")
+	if err := s.ConfirmTrust(ctx, a, c); err == nil {
+		t.Fatal("blocked authenticated interaction confirmed trust")
+	}
+	setLevel("unknown")
 	if err = s.ConfirmTrust(ctx, a, c); err != nil {
 		t.Fatal(err)
 	}
@@ -310,6 +451,11 @@ func testAuthorization(t *testing.T, s *application.Service, store *persistence.
 		t.Fatal(err)
 	}
 	ctx = context.WithValue(ctx, application.RequestKey{}, application.RequestInfo{Resource: "resource", ClientID: c.ID, Code: "private-code"})
+	setLevel("blocked")
+	if _, _, _, err := s.CreateAccessAndRefreshTokens(ctx, a, ""); err == nil {
+		t.Fatal("blocked unconsumed code exchanged")
+	}
+	setLevel("unknown")
 	access, refresh, _, err := s.CreateAccessAndRefreshTokens(ctx, a, "")
 	if err != nil {
 		t.Fatal(err)
@@ -337,6 +483,33 @@ func testAuthorization(t *testing.T, s *application.Service, store *persistence.
 		if entries[0].TrustLevel != domain.TrustUnknown {
 			t.Fatal("trust confirmation changed presentation level")
 		}
+	}
+	if err := store.DB.Table("oauth_clients").Where("id = ?", security.Hash(c.ID)).Update("trust_level", "blocked").Error; err != nil {
+		t.Fatal(err)
+	}
+	if _, _, _, err := s.AccessByID(db, access, account.ID); err == nil {
+		t.Fatal("blocked access accepted")
+	}
+	if _, _, err := s.ActiveGrant(db, a.GrantID, false); err == nil {
+		t.Fatal("blocked grant accepted")
+	}
+	if _, err := s.TokenRequestByRefreshToken(ctx, next); err == nil {
+		t.Fatal("blocked refresh accepted")
+	}
+	if err := s.ConfirmTrust(ctx, a, c); err == nil {
+		t.Fatal("blocked trust accepted")
+	}
+	if err := s.Consent(ctx, a, c, []string{"mcp:access"}); err == nil {
+		t.Fatal("blocked consent accepted")
+	}
+	if err := s.SaveAuthCode(ctx, a.ID, "blocked-code"); err == nil {
+		t.Fatal("blocked code issued")
+	}
+	if _, err := s.AuthRequestByCode(ctx, "private-code"); err == nil {
+		t.Fatal("blocked code accepted")
+	}
+	if err := store.DB.Table("oauth_clients").Where("id = ?", security.Hash(c.ID)).Update("trust_level", "unknown").Error; err != nil {
+		t.Fatal(err)
 	}
 	if err = s.RevokeToken(ctx, next, account.ID, c.ID); err != nil {
 		t.Fatal(err)

@@ -36,6 +36,8 @@ func providerError(ctx context.Context, err error) error {
 			result = oidc.ErrInvalidRequest()
 		case "invalid_grant":
 			result = oidc.ErrInvalidGrant()
+		case "unauthorized_client":
+			result = oidc.ErrUnauthorizedClient()
 		case "invalid_client":
 			result = oidc.ErrInvalidClient()
 		case "invalid_scope":

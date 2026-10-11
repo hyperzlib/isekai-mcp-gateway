@@ -24,7 +24,7 @@ func TestPageReadUpstreamSelectors(t *testing.T) {
 		q := r.URL.Query()
 		queries = append(queries, q)
 		if q.Get("action") == "parse" {
-			body, _ := json.Marshal(Object{"parse": Object{"images": []any{}}})
+			body, _ := json.Marshal(Object{"parse": Object{"images": []any{}, "links": []any{}}})
 			return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(string(body))), Header: http.Header{}}, nil
 		}
 		pg := Object{"pageid": 123, "title": "帮助:编辑/章节", "revisions": []any{Object{"revid": 456, "slots": Object{"main": Object{"content": "正文", "contentmodel": "wikitext"}}}}}
