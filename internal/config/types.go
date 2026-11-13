@@ -34,6 +34,14 @@ type Client struct {
 	ResourceClient bool     `json:"resourceClient,omitempty"`
 }
 
+// APIKeys 控制 sk- 密钥认证能力（server.json，重启生效）。
+type APIKeys struct {
+	Enabled        bool `json:"enabled"`
+	MaxPerUser     int  `json:"maxPerUser"`
+	MaxTTLSeconds  int  `json:"maxTtlSeconds"`
+	AllowPermanent bool `json:"allowPermanent"`
+}
+
 type Gateway struct {
 	Issuer            string       `json:"issuer"`
 	Resource          string       `json:"resource"`
@@ -56,6 +64,7 @@ type Gateway struct {
 		MaxClients int      `json:"maxClients"`
 		IdleTTL    int      `json:"idleClientTtlSeconds"`
 	} `json:"registration"`
+	APIKeys APIKeys `json:"apiKeys"`
 	Fetch struct {
 		TimeoutMS    int   `json:"timeoutMs"`
 		MaxBytes     int64 `json:"maxBytes"`
@@ -104,6 +113,11 @@ type OidcConnect struct {
 	Secret      string   `json:"clientSecret,omitempty" secret:"true"`
 	RedirectURI string   `json:"redirectUri"`
 	Scopes      []string `json:"authorizationScopes"`
+	// AvatarClaim 是带来源前缀的头像声明路径："id_token." 从已验证 ID token
+	// 取值，"userinfo." 调 UserInfo 端点取值；留空表示不取头像。
+	AvatarClaim string `json:"avatarClaim,omitempty"`
+	// DefaultAvatar 是头像缺失时的兜底地址，可为 URL 或 /assets/ 本地路径。
+	DefaultAvatar string `json:"defaultAvatar,omitempty"`
 }
 
 type MediaWiki struct {

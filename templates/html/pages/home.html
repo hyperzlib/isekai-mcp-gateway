@@ -2,6 +2,8 @@
 <html lang="zh-CN">
 
 <head>
+    <link rel="describedby" type="text/markdown" href="/llms.txt">
+    {{.DiscoveryComment}}
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{.Title}}</title>
@@ -12,19 +14,29 @@
     <script src="/assets/home/vendor/purify.min.js" defer></script>
     <script src="/assets/home/guide-renderer.js" defer></script>
     <script src="/assets/home/home.js" defer></script>
+    <script src="/assets/auth/auth.js" defer></script>
 </head>
 
 <body class="home-page">
     <div class="home-shell">
         <header class="home-brand">{{if .SiteIconURL}}<img src="{{.SiteIconURL}}"
-                alt="">{{end}}<span>{{.SiteTitle}}</span><span class="home-badge">MCP 接入指南</span></header>
+                alt="">{{end}}<span>{{.SiteTitle}}</span>
+            {{if .HeaderLink}}<a class="home-header-link" href="{{.HeaderLink.URL}}">{{.HeaderLink.Label}}</a>{{end}}
+            <nav class="home-nav" aria-label="账号">
+                {{if .LoggedIn}}
+                {{template "partials/nav" .}}
+                {{else}}
+                <a class="primary" href="/auth/login?backto=home">登录</a>
+                {{end}}
+            </nav>
+        </header>
         <section class="home-intro">
             <p class="home-eyebrow">Wiki MCP</p>
             <h1>将<span class="home-title-brand">{{.SiteTitle}}</span><br>连接到你的 AI 助手</h1>
-            <p>连接后，就能让Agent搜索词条、阅读页面、整理资料，并在你的授权后编辑Wiki上的页面</p>
+            <p>连接后，就能通过Agent搜索词条、阅读页面、整理资料，并让Agent编辑Wiki上的页面</p>
         </section>
         <section class="home-endpoint" aria-label="MCP 连接地址">
-            <div><span class="home-label">服务器地址</span><code id="endpoint">{{.Endpoint}}</code><small>把这一条地址复制给任意支持 MCP 的客户端即可</small></div><button type="button" data-copy="endpoint">复制地址</button>
+            <div><span class="home-label">MCP 服务器地址</span><code id="endpoint">{{.Endpoint}}</code><small>把这一条地址复制给任意支持 MCP 的客户端即可</small></div><button type="button" data-copy="endpoint">复制地址</button>
         </section>
         <section class="home-connect" data-mcp-endpoint="{{.Endpoint}}">
             <nav class="home-clients" aria-label="选择客户端">
@@ -78,7 +90,7 @@
                 </div>
             </details>
         </section>
-        <footer>通过 MCP 连接 · 客户端界面可能随版本更新，若页面与实际不符请参考各客户端官方文档。</footer>
+        <footer><a href="/llms.txt">AI / MCP 接入信息</a> · 通过 MCP 连接 · 客户端界面可能随版本更新，若页面与实际不符请参考各客户端官方文档。</footer>
         <p id="copy-status" class="home-status" role="status" aria-live="polite"></p>
     </div>
 </body>

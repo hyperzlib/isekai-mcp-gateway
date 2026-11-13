@@ -7,19 +7,17 @@ resolve_page_url 将完整 HTTP(S) 页面 URL 或站内绝对路径（如 /首�
 - get_latest_page：最新可见正文；启用 Moderation 时可能是当前用户提交的审核中的修订版，其 temp_revision_id 不能当作正式 revision_id。
 - get_baseline_page：始终读取公开正式修订。
 
-默认不跟随重定向，需要目标正文时传 follow_redirects=true。结果返回规范 title、page_id、revision_id、redirect_chain 和 resources；编辑优先使用 page: {page_id}，新建时才用 title。
+工具入参的title无需URL编码。
 
-如果需要编辑先前新建，但仍在审核中， 没有正式创建的页面，也需要使用 title 指定。
+默认不跟随 MediaWiki 的页面重定向，需要目标正文时传 follow_redirects=true。结果返回规范 title、page_id、revision_id、redirect_chain 和 resources。
+
+选择页面时按是否有公开 page_id 判断：有就用 page: {page_id}；没有才用 title。新建页面（begin_create），以及新建后仍在待审、尚无正式页面的情况，都属于没有 page_id 的一类，title 与创建时提交的保持一致。
 
 分页用 next_cursor 续页，并保持相同的 title/page_id 与筛选参数。source 和 html 类结果用 UTF-8 字节 offset/limit 读取。上游失败不能解释为页面不存在。
 
-title 需要符合：
+## Resource 读取注意事项
 
-```javascript
-let titleEncoded = encodeURIComponent(titleText)
-```
-
-编码格式。（需要转义的字符与encodeURIComponent一致，不强制使用js进行编码）
+使用 resource 读取时，title 需要进行URL编码，尤其是 `/` 需要编码为 `%2F`（需要转义的字符与encodeURIComponent一致，不强制使用js进行编码）
 
 ## 章节结构和页面依赖
 

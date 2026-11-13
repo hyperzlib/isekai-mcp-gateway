@@ -3,7 +3,8 @@
   "configVersion": 1,
   "site": {
     "title": "Isekai MCP Gateway",
-    "iconUrl": ""
+    "iconUrl": "",
+    "headerLink": { "label": "百科首页", "url": "https://www.isekai.cn" }
   },
   "auth": {
     "oidc_client": {
@@ -16,7 +17,9 @@
         "profile",
         "email"
       ],
-      "clientSecret": ""
+      "clientSecret": "",
+      "avatarClaim": "id_token.picture",
+      "defaultAvatar": "/assets/icons/default-avatar.svg"
     },
     "consent": {
       "defaultSelectedScopes": [

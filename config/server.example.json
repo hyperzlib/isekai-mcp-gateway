@@ -36,6 +36,12 @@
         "maxClients": 10000,
         "idleClientTtlSeconds": 2592000
       },
+      "apiKeys": {
+        "enabled": true,
+        "maxPerUser": 10,
+        "maxTtlSeconds": 31536000,
+        "allowPermanent": true
+      },
       "metadataFetch": {
         "timeoutMs": 5000,
         "maxBytes": 65536,

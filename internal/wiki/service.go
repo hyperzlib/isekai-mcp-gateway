@@ -7,9 +7,12 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net/url"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"isekai-mcp-gateway/internal/auth/application"
+	"isekai-mcp-gateway/internal/auth/domain"
 	"isekai-mcp-gateway/internal/config"
 	"isekai-mcp-gateway/internal/failure"
 	"isekai-mcp-gateway/internal/integrations/mediawiki"
@@ -74,18 +77,41 @@ func (s *Service) Call(ctx context.Context, extra *mcp.RequestExtra, scope strin
 		return nil, detail("INSUFFICIENT_SCOPE", "Authorize the required scope.", Object{"required_scopes": []string{scope}})
 	}
 	db := s.Auth.Store.Database().WithContext(ctx)
-	g, _, e := s.Auth.ActiveGrant(db, p.GrantID, false)
-	if e != nil {
-		return nil, e
-	}
 
-	// 校验 grant 对应的会话仍存在，且会话身份与 token 声明的用户一致。
-	var session application.Session
-	if _, e = s.Auth.Store.Get(db, "sessions", g.SessionID, &session, false); e != nil {
-		return nil, e
-	}
-	if session.Identity.UserID != p.WikiUserID {
-		return nil, application.ErrInvalidToken
+	// 凭据来源分派：OAuth principal 经授权链校验，API key principal 复核 key 记录。
+	var (
+		credentials mediawiki.Credentials
+		accountID   string
+		siteID      string
+	)
+	if p.AuthKind == domain.AuthKindAPIKey {
+		key, _, e := s.Auth.APIKeyFor(ctx, p.GrantID)
+		if e != nil {
+			return nil, e
+		}
+		if key.Identity.UserID != p.WikiUserID {
+			return nil, application.ErrInvalidToken
+		}
+		credentials = mediawiki.Credentials{UserID: p.WikiUserID, Token: key.Identity.UserToken}
+		accountID = key.AccountID
+	} else {
+		g, _, e := s.Auth.ActiveGrant(db, p.GrantID, false)
+		if e != nil {
+			return nil, e
+		}
+		accountID = g.AccountID
+
+		// 校验 grant 对应的会话仍存在，且会话身份与 token 声明的用户一致。
+		var session application.Session
+		if _, e = s.Auth.Store.Get(db, "sessions", g.SessionID, &session, false); e != nil {
+			return nil, e
+		}
+		if session.Identity.UserID != p.WikiUserID {
+			return nil, application.ErrInvalidToken
+		}
+		credentials = mediawiki.Credentials{UserID: p.WikiUserID, Token: session.Identity.UserToken}
+		// 会话绑定站点优先，缺失时回退到账户站点。
+		siteID = session.SiteID
 	}
 
 	// 上游连接必须在运行期可用。
@@ -93,25 +119,55 @@ func (s *Service) Call(ctx context.Context, extra *mcp.RequestExtra, scope strin
 	if b == nil {
 		return nil, errCode("SERVICE_UNAVAILABLE", "Wiki connection is unavailable.")
 	}
-	if e = s.rememberSite(ctx, b.Bridge); e != nil {
+	if e := s.rememberSite(ctx, b.Bridge); e != nil {
 		return nil, e
 	}
-	call := &Call{p, mediawiki.Credentials{UserID: p.WikiUserID, Token: session.Identity.UserToken}, b.Bridge, b.Config}
+	call := &Call{p, credentials, b.Bridge, b.Config}
 	var account application.Account
-	if _, e = s.Auth.Store.Get(db, "accounts", g.AccountID, &account, false); e != nil {
+	if _, e := s.Auth.Store.Get(db, "accounts", accountID, &account, false); e != nil {
 		return nil, e
 	}
-	// 会话绑定站点优先，缺失时回退到账户站点。
-	siteID := session.SiteID
 	if siteID == "" {
 		siteID = account.SiteID
 	}
 	if siteID != "" {
-		if e = s.site(call, siteID); e != nil {
+		if e := s.site(call, siteID); e != nil {
+			return nil, e
+		}
+	}
+	// API key 凭据是创建时的身份快照，wiki 鉴权失败时重取一次并重试。
+	if p.AuthKind == domain.AuthKindAPIKey {
+		if e := s.refreshCredentialsIfNeeded(ctx, call); e != nil {
 			return nil, e
 		}
 	}
 	return call, nil
+}
+
+// bridgeAuthError 判定错误是否来自 wiki 侧的用户凭据校验失败。
+func bridgeAuthError(err error) bool {
+	var apiErr *mediawiki.APIError
+	return errors.As(err, &apiErr) && strings.HasPrefix(apiErr.Code, "isekai-servicebridge-")
+}
+
+// refreshCredentialsIfNeeded 用轻量请求探测凭据有效性；Bridge 拒绝时
+// 重新解析身份并重试一次，避免快照凭据失效后持续报错。
+func (s *Service) refreshCredentialsIfNeeded(ctx context.Context, call *Call) error {
+	if _, err := call.Client.Query(ctx, call.Credentials, url.Values{"action": {"query"}, "meta": {"userinfo"}}); err == nil || !bridgeAuthError(err) {
+		return nil
+	}
+	if err := s.Auth.RefreshAPIKeyIdentity(ctx, call.Principal.GrantID); err != nil {
+		return nil // 重取失败不阻断本次调用，由具体工具按原错误反馈
+	}
+	key, _, err := s.Auth.APIKeyFor(ctx, call.Principal.GrantID)
+	if err != nil {
+		return err
+	}
+	call.Credentials = mediawiki.Credentials{UserID: call.Principal.WikiUserID, Token: key.Identity.UserToken}
+	if _, err := call.Client.Query(ctx, call.Credentials, url.Values{"action": {"query"}, "meta": {"userinfo"}}); err != nil && bridgeAuthError(err) {
+		return err
+	}
+	return nil
 }
 
 // owner 摘要绑定站点与用户，用于隔离各站点的持久化对象。

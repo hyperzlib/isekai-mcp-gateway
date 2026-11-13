@@ -1,0 +1,309 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "auth": {
+      "additionalProperties": false,
+      "properties": {
+        "gateway": {
+          "additionalProperties": false,
+          "properties": {
+            "accessTokenFormat": {
+              "type": "string"
+            },
+            "accessTokenTtlSeconds": {
+              "type": "integer"
+            },
+            "apiKeys": {
+              "additionalProperties": false,
+              "properties": {
+                "allowPermanent": {
+                  "type": "boolean"
+                },
+                "enabled": {
+                  "type": "boolean"
+                },
+                "maxPerUser": {
+                  "type": "integer"
+                },
+                "maxTtlSeconds": {
+                  "type": "integer"
+                }
+              },
+              "type": "object"
+            },
+            "authorizationCodeTtlSeconds": {
+              "type": "integer"
+            },
+            "cookieSecret": {
+              "type": "string",
+              "writeOnly": true
+            },
+            "cookieSecretEnv": {
+              "type": "string"
+            },
+            "grantMaxTtlSeconds": {
+              "type": "integer"
+            },
+            "interactionTtlSeconds": {
+              "type": "integer"
+            },
+            "issuer": {
+              "type": "string"
+            },
+            "metadataFetch": {
+              "additionalProperties": false,
+              "properties": {
+                "maxBytes": {
+                  "type": "integer"
+                },
+                "maxRedirects": {
+                  "type": "integer"
+                },
+                "timeoutMs": {
+                  "type": "integer"
+                }
+              },
+              "type": "object"
+            },
+            "refreshTokenIdleTtlSeconds": {
+              "type": "integer"
+            },
+            "registration": {
+              "additionalProperties": false,
+              "properties": {
+                "cimd": {
+                  "type": "boolean"
+                },
+                "dynamic": {
+                  "type": "boolean"
+                },
+                "idleClientTtlSeconds": {
+                  "type": "integer"
+                },
+                "maxClients": {
+                  "type": "integer"
+                },
+                "preRegisteredClients": {
+                  "items": {
+                    "additionalProperties": false,
+                    "properties": {
+                      "clientSecret": {
+                        "type": "string",
+                        "writeOnly": true
+                      },
+                      "clientSecretEnv": {
+                        "type": "string"
+                      },
+                      "client_id": {
+                        "type": "string"
+                      },
+                      "client_name": {
+                        "type": "string"
+                      },
+                      "client_uri": {
+                        "type": "string"
+                      },
+                      "grant_types": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "logo_uri": {
+                        "type": [
+                          "string",
+                          "null"
+                        ]
+                      },
+                      "redirect_uris": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "resourceClient": {
+                        "type": "boolean"
+                      },
+                      "response_types": {
+                        "items": {
+                          "type": "string"
+                        },
+                        "type": "array"
+                      },
+                      "scope": {
+                        "type": "string"
+                      },
+                      "token_endpoint_auth_method": {
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              },
+              "type": "object"
+            },
+            "resource": {
+              "type": "string"
+            },
+            "signingJwks": {
+              "additionalProperties": false,
+              "properties": {
+                "keys": {
+                  "items": {
+                    "additionalProperties": true,
+                    "type": "object"
+                  },
+                  "type": "array"
+                }
+              },
+              "type": [
+                "object",
+                "null"
+              ],
+              "writeOnly": true
+            },
+            "signingJwksEnv": {
+              "type": "string"
+            },
+            "storageEncryptionKey": {
+              "type": "string",
+              "writeOnly": true
+            },
+            "storageEncryptionKeyEnv": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "configVersion": {
+      "type": "integer"
+    },
+    "extensions": {
+      "additionalProperties": false,
+      "properties": {
+        "IsekaiLitePageACL": {
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            }
+          },
+          "type": "object"
+        },
+        "Moderation": {
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "server": {
+      "additionalProperties": false,
+      "properties": {
+        "allowedHosts": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "allowedOrigins": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "host": {
+          "type": "string"
+        },
+        "port": {
+          "type": "integer"
+        },
+        "publicUrl": {
+          "type": "string"
+        },
+        "requestBodyMaxBytes": {
+          "type": "integer"
+        },
+        "tls": {
+          "additionalProperties": false,
+          "properties": {
+            "certFile": {
+              "type": "string"
+            },
+            "enabled": {
+              "type": "boolean"
+            },
+            "keyFile": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "storage": {
+      "additionalProperties": false,
+      "properties": {
+        "database": {
+          "type": "string"
+        },
+        "driver": {
+          "type": "string"
+        },
+        "host": {
+          "type": "string"
+        },
+        "password": {
+          "type": "string",
+          "writeOnly": true
+        },
+        "passwordEnv": {
+          "type": "string"
+        },
+        "poolSize": {
+          "type": "integer"
+        },
+        "port": {
+          "type": "integer"
+        },
+        "tls": {
+          "additionalProperties": false,
+          "properties": {
+            "caPath": {
+              "type": "string"
+            },
+            "enabled": {
+              "type": "boolean"
+            },
+            "serverName": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "username": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "title": "Gateway server configuration",
+  "type": "object",
+  "x-reload": false
+}

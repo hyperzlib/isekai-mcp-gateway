@@ -12,13 +12,20 @@ func (s *Service) CurrentUser(ctx context.Context, p *Principal) (domain.UserInf
 		return domain.UserInfo{}, ErrInvalidToken
 	}
 	db := s.Store.Database().WithContext(ctx)
-	g, _, err := s.ActiveGrant(db, p.GrantID, false)
-	if err != nil {
-		return domain.UserInfo{}, lookupError(err, ErrInvalidToken)
-	}
-	// 授权主体与客户端必须与当前身份一致。
-	if g.AccountID != p.AccountID || g.ClientID != p.OAuthClientID {
-		return domain.UserInfo{}, ErrInvalidToken
+	// API key principal 不走授权链，直接复核 key 记录仍有效。
+	if p.AuthKind == domain.AuthKindAPIKey {
+		if _, _, err := s.APIKeyFor(ctx, p.GrantID); err != nil {
+			return domain.UserInfo{}, err
+		}
+	} else {
+		g, _, err := s.ActiveGrant(db, p.GrantID, false)
+		if err != nil {
+			return domain.UserInfo{}, lookupError(err, ErrInvalidToken)
+		}
+		// 授权主体与客户端必须与当前身份一致。
+		if g.AccountID != p.AccountID || g.ClientID != p.OAuthClientID {
+			return domain.UserInfo{}, ErrInvalidToken
+		}
 	}
 	var account Account
 	row, err := s.Store.Get(db, "accounts", p.AccountID, &account, false)

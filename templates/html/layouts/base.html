@@ -7,14 +7,24 @@
   <title>{{.Title}}</title>
   <link rel="stylesheet" href="/assets/auth/style.css">
   <script src="/assets/auth/auth.js" defer></script>
+  <script src="/assets/auth/vendor/alpine-csp.min.js" defer></script>
 </head>
-<body>
-  <header class="page-head">
+<body class="{{if and .Wide (not .CreatedKey)}}page-wide{{end}}">
+  <header class="page-head{{if and .Wide (not .CreatedKey)}} wide{{end}}">
     {{ template "partials/brand" . }}
+    {{if and .Wide (not .CreatedKey)}}{{ template "partials/nav" . }}{{end}}
   </header>
-  <main class="card">
+  <main class="card{{if and .Wide (not .CreatedKey)}} wide{{end}}">
     {{ block "content" . }}{{ end }}
   </main>
+  {{if and .Wide (not .CreatedKey)}}
+  <dialog class="modal confirm-dialog" id="confirm-removal" aria-labelledby="confirm-title" aria-describedby="confirm-message">
+    <div class="confirm-content"><h2 id="confirm-title"></h2><p class="confirm-name"></p><p id="confirm-message"></p>
+      <div class="actions modal-actions"><button type="button" data-confirm-submit>确认</button><button type="button" class="secondary" data-close-dialog>取消</button></div>
+    </div>
+  </dialog>
+  <div class="removal-notice" role="status" hidden><svg class="removal-notice-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 5 5L20 6"/></svg><span></span><button type="button" aria-label="关闭通知">✕</button></div>
+  {{end}}
 </body>
 </html>
 {{ end }}

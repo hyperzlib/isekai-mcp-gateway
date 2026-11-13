@@ -24,6 +24,9 @@ func credentialPaths(kind string) []string {
 		return []string{"SessionID"}
 	case "access_tokens", "refresh_tokens":
 		return []string{"ID"}
+	case "api_keys":
+		// API key 快照里的 UserToken 与 sessions 采用相同的凭据分离加密。
+		return []string{"Identity.user_token"}
 	default:
 		return nil
 	}

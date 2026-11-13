@@ -21,13 +21,59 @@
   border-radius: 10px;
 }
 .home-page .home-badge {
-  margin-left: auto;
   font-size: 0.8rem;
   color: var(--text-muted);
   border: 1px solid var(--line);
   border-radius: 24px;
   padding: 4px 12px;
 }
+.home-page .home-nav {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-left: auto;
+}
+.home-page .home-nav-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 260px;
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.home-page .home-nav-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  flex: none;
+}
+.home-page .home-nav a {
+  flex: none;
+  display: inline-block;
+  padding: 8px 18px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  text-decoration: none;
+  transition: color .15s ease, background .15s ease;
+}
+.home-page .home-nav a:hover { color: var(--text); }
+.home-page .home-nav a.primary {
+  color: var(--accent-ink);
+  background: var(--accent);
+  border-color: transparent;
+}
+.home-page .home-nav a.primary:hover { filter: brightness(1.06); color: var(--accent-ink); }
 .home-page .home-intro {
   padding: 18px 0 30px;
 }
@@ -549,3 +595,26 @@
     padding: 0 16px 14px;
   }
 }
+
+/* 账户导航与管理页保持一致 */
+.home-page .home-nav-actions { display: flex; align-items: center; gap: 4px; padding-left: 12px; border-left: 1px solid var(--line); }
+.home-page .home-nav-actions a { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 8px; font-size: .8rem; font-weight: 500; background: transparent; border-color: transparent; border-radius: 8px; white-space: nowrap; }
+.home-page .home-nav-actions a:hover { color: var(--text); background: var(--surface); }
+.home-page .home-nav-actions svg { flex: none; width: 18px; height: 18px; }
+@media (max-width: 720px) {
+  .home-page .home-brand { flex-wrap: wrap; }
+  .home-page .home-nav { flex-wrap: wrap; gap: 8px; }
+  .home-page .home-nav-user { max-width: 160px; }
+}
+@media (max-width: 480px) {
+  .home-page .home-nav { flex-basis: 100%; margin-left: 0; }
+  .home-page .home-nav-actions { flex-wrap: wrap; }
+}
+.home-page .home-nav .account-menu-panel a { display: block; width: 100%; padding: 10px 12px; color: var(--text); background: transparent; border: 0; border-radius: 8px; font-size: .85rem; font-weight: 500; line-height: 1.4; }
+.home-page .home-nav .account-menu-panel a:hover { background: var(--surface); }
+.home-page .home-brand .nav-avatar { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+
+.home-page .home-nav .account-menu-panel a { display: flex; align-items: center; gap: 10px; }
+
+.home-page .home-header-link { padding: 6px 10px; color: var(--text-muted); border-radius: 8px; font-size: .9rem; font-weight: 500; text-decoration: none; overflow-wrap: anywhere; }
+.home-page .home-header-link:hover { color: var(--text); background: var(--surface); }

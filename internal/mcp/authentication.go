@@ -8,6 +8,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"isekai-mcp-gateway/internal/auth/application"
+	"isekai-mcp-gateway/internal/auth/domain"
 )
 
 // MCP transport contexts can outlive the HTTP request on older protocol
@@ -22,6 +23,12 @@ func (s *Authenticator) CheckMCPRequest(ctx context.Context, extra *mcp.RequestE
 	p, ok := extra.TokenInfo.Extra["principal"].(*application.Principal)
 	if !ok || p == nil || !p.ExpiresAt.After(time.Now()) || !slices.Contains(p.Scopes, "mcp:access") {
 		return application.ErrInvalidToken
+	}
+
+	// API key principal 不走授权链：按 key 记录复核仍活跃且未过期。
+	if p.AuthKind == domain.AuthKindAPIKey {
+		_, _, err := s.APIKeyFor(ctx, p.GrantID)
+		return err
 	}
 
 	// 最后确认底层 Grant 仍然有效（未被撤销/过期），防止已失效的令牌继续使用。

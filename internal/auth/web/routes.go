@@ -19,6 +19,9 @@ func (s *Service) Routes(r chi.Router) {
 	forms.Post("/clients", s.Clients)
 	forms.Get("/grants", s.Grants)
 	forms.Post("/grants", s.Grants)
+	forms.Get("/apikeys", s.APIKeys)
+	forms.Post("/apikeys", s.APIKeys)
+	forms.Post("/logout", s.Logout)
 	// 表单路由统一挂载 CSRF 防护，HTTPS issuer 下才启用 Secure Cookie
 	csrf := nosurf.New(forms)
 	csrf.SetBaseCookie(http.Cookie{Name: "gateway_csrf", Path: "/auth", HttpOnly: true,

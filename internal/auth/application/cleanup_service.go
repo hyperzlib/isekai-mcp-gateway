@@ -23,6 +23,10 @@ func (s *Service) Cleanup(ctx context.Context) error {
 				return err
 			}
 		}
+		// API key 吊销后立即进入清理名单。
+		if err := tx.Table(persistence.Table("api_keys")).Where("state = ?", "revoked").Delete(&persistence.Row{}).Error(); err != nil {
+			return err
+		}
 		// 回收已过期的待处理客户端，以及长期空闲的活跃客户端。
 		var rows []persistence.Row
 		if err := tx.Table(persistence.Table("clients")).Where("(state = ? AND expires_at < ?) OR (state = ? AND updated_at < ?)", "pending", now, "active", now.Add(-Seconds(s.Config.Static.Auth.Gateway.Registration.IdleTTL))).Lock().Find(&rows).Error(); err != nil {

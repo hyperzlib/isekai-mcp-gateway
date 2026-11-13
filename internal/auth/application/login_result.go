@@ -10,6 +10,9 @@ type FlowError struct {
 	Status  int
 	Code    string
 	Cause   error
+	// Retry 是错误页“重试”按钮的提交地址（发起登录的同一端点）；
+	// 为空表示该错误无法就地重试。
+	Retry string
 }
 
 func (e *FlowError) Error() string { return e.Message }

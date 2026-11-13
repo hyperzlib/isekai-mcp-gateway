@@ -1,0 +1,7 @@
+{{ define "partials/mgmttabs" }}
+<nav class="tabs-top" aria-label="管理页签">
+  <a href="/auth/grants"{{if eq .Mode "grants"}} aria-current="page"{{end}}>管理授权</a>
+  <a href="/auth/clients"{{if eq .Mode "clients"}} aria-current="page"{{end}}>已信任的应用</a>
+  {{if .KeyEnabled}}<a href="/auth/apikeys"{{if eq .Mode "apikeys"}} aria-current="page"{{end}}>API Keys</a>{{end}}
+</nav>
+{{ end }}

@@ -42,3 +42,22 @@ func TestSiteConfiguration(t *testing.T) {
 		}
 	}
 }
+
+func TestSiteHeaderLink(t *testing.T) {
+	for _, tc := range []struct {
+		link  *SiteHeaderLink
+		valid bool
+	}{
+		{nil, true}, {&SiteHeaderLink{Label: "百科", URL: "https://www.isekai.cn"}, true},
+		{&SiteHeaderLink{Label: "Wiki", URL: "/wiki?x=1#top"}, true},
+		{&SiteHeaderLink{Label: " ", URL: "/"}, false}, {&SiteHeaderLink{Label: "Wiki"}, false},
+		{&SiteHeaderLink{Label: "Wiki", URL: "//evil.test"}, false}, {&SiteHeaderLink{Label: "Wiki", URL: "javascript:alert(1)"}, false},
+		{&SiteHeaderLink{Label: "Wiki", URL: "https://user@evil.test"}, false}, {&SiteHeaderLink{Label: "Wiki", URL: "http://evil.test"}, false},
+	} {
+		c := Defaults()
+		c.App.Site.HeaderLink = tc.link
+		if (c.validateSite() == nil) != tc.valid {
+			t.Errorf("link %#v valid=%v", tc.link, tc.valid)
+		}
+	}
+}

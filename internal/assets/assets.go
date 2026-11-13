@@ -53,11 +53,10 @@ func (s *Service) Handler() http.Handler {
 			http.NotFound(w, r)
 			return
 		}
-		if strings.HasPrefix(name, "home/guides/") {
-			w.Header().Set("Cache-Control", "no-cache")
-			if filepath.Ext(name) == ".md" {
-				w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
-			}
+		// 静态资源按 Last-Modified 协商缓存，运行期替换文件后立即可见。
+		w.Header().Set("Cache-Control", "no-cache")
+		if strings.HasPrefix(name, "home/guides/") && filepath.Ext(name) == ".md" {
+			w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
 		}
 		server.ServeHTTP(w, r)
 	})

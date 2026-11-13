@@ -12,8 +12,10 @@ func Defaults() *Config {
 	g.Registration.CIMD, g.Registration.Dynamic = true, true
 	g.Registration.MaxClients, g.Registration.IdleTTL = 10000, 2592000
 	g.Fetch.TimeoutMS, g.Fetch.MaxBytes, g.Fetch.MaxRedirects = 5000, 65536, 2
+	g.APIKeys = APIKeys{Enabled: true, MaxPerUser: 10, MaxTTLSeconds: 31536000, AllowPermanent: true}
 	c.Static.Storage = Storage{Driver: "mysql", Host: "127.0.0.1", Port: 3306, PoolSize: 10}
 	c.App.Auth.OidcClient.Scopes = []string{"openid", "profile", "email"}
+	c.App.Auth.OidcClient.DefaultAvatar = "/assets/icons/default-avatar.svg"
 	c.App.Auth.Consent.DefaultSelectedScopes = []string{"mcp:access"}
 	c.App.MediaWiki.TimeoutMS = 15000
 	c.App.MediaWiki.PublicOrigins = []string{}

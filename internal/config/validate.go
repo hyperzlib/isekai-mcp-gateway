@@ -31,6 +31,14 @@ func ValidAPIURL(raw string) bool {
 		(u.Scheme == "https" || u.Scheme == "http")
 }
 
+// validAssetPath 限制本地兜底头像必须落在 /assets/ 下且不允许路径回溯。
+func validAssetPath(raw string) bool {
+	if !strings.HasPrefix(raw, "/assets/") {
+		return false
+	}
+	return !strings.ContainsAny(raw, "\"'\\\r\n ") && !strings.Contains(raw, "..")
+}
+
 func (c *Config) Validate() (err error) {
 	// Validation explanations below are literals or server-generated field names.
 	// Keep them useful to CLI operators while preserving their cause internally.
@@ -94,6 +102,19 @@ func (c *Config) Validate() (err error) {
 	// 访问令牌有效期不得超过授权上限；元数据抓取限制需合理。
 	if g.AccessTTL > g.GrantTTL || g.Fetch.MaxBytes <= 0 || g.Fetch.MaxRedirects < 0 {
 		return errors.New("invalid authorization or metadata limits")
+	}
+	// API key 配额必须合理；永久密钥的有效期哨兵不受 TTL 上限约束。
+	if g.APIKeys.Enabled && (g.APIKeys.MaxPerUser < 1 || g.APIKeys.MaxTTLSeconds < 60) {
+		return errors.New("invalid API key limits")
+	}
+	// 头像声明必须带来源前缀；兜底头像只能是 /assets/ 本地路径或合法 URL。
+	if avc := c.App.Auth.OidcClient.AvatarClaim; avc != "" &&
+		!strings.HasPrefix(avc, "id_token.") && !strings.HasPrefix(avc, "userinfo.") {
+		return errors.New("avatarClaim must start with id_token. or userinfo.")
+	}
+	if av := c.App.Auth.OidcClient.DefaultAvatar; av != "" &&
+		!ValidURL(av) && !validAssetPath(av) {
+		return errors.New("defaultAvatar must be an HTTPS URL or an /assets/ path")
 	}
 
 	// 目前仅支持 MySQL，且库名、用户名与端口必填。

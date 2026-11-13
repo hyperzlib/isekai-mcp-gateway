@@ -1,9 +1,10 @@
 {{ template "layout/base" . }}
 {{ define "content" }}
+    {{if and (eq .ReturnTo "/") (not .Interaction)}}<a class="page-back" href="/" aria-label="返回到主页" title="返回到主页"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M19 12H5m7-7-7 7 7 7"/></svg></a>{{end}}
     <section class="hero">
       <span class="hero-icon icon-accent" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></span>
       <h1>{{.Title}}</h1>
-      <p class="subtitle">请先登录你的 Wiki 账号，随后选择允许这个应用使用的功能</p>
+      <p class="subtitle">请先登录你的 Wiki 账号</p>
     </section>
     {{ template "partials/trusthint" . }}
     <form method="post" class="actions">

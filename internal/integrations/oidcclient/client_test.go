@@ -93,9 +93,9 @@ func TestOIDCLoginValidation(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			subject, err := client.Authenticate(context.Background(), "code", "verifier", "nonce")
-			if (err == nil) != test.valid || test.valid && subject != "wiki-subject" {
-				t.Fatalf("subject=%q, error=%v", subject, err)
+			result, err := client.Authenticate(context.Background(), "code", "verifier", "nonce")
+			if (err == nil) != test.valid || test.valid && result.Subject != "wiki-subject" {
+				t.Fatalf("subject=%q, error=%v", result.Subject, err)
 			}
 		})
 	}

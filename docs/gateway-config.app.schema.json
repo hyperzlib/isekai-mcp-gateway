@@ -1,0 +1,281 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "additions": {
+      "additionalProperties": false,
+      "properties": {
+        "aiRevisionTags": {
+          "additionalProperties": false,
+          "properties": {
+            "mapping": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            }
+          },
+          "type": "object"
+        },
+        "foreignPageConfirmation": {
+          "additionalProperties": false,
+          "properties": {
+            "challengeTtlSeconds": {
+              "type": "integer"
+            },
+            "exemption": {
+              "type": "string"
+            },
+            "operations": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "policyVersion": {
+              "type": "integer"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "auth": {
+      "additionalProperties": false,
+      "properties": {
+        "consent": {
+          "additionalProperties": false,
+          "properties": {
+            "defaultSelectedScopes": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          "type": "object"
+        },
+        "oidc_client": {
+          "additionalProperties": false,
+          "properties": {
+            "authorizationScopes": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            "avatarClaim": {
+              "type": "string"
+            },
+            "clientId": {
+              "type": "string"
+            },
+            "clientSecret": {
+              "type": "string",
+              "writeOnly": true
+            },
+            "clientSecretEnv": {
+              "type": "string"
+            },
+            "defaultAvatar": {
+              "type": "string"
+            },
+            "issuer": {
+              "type": "string"
+            },
+            "redirectUri": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        }
+      },
+      "type": "object"
+    },
+    "configVersion": {
+      "type": "integer"
+    },
+    "editing": {
+      "additionalProperties": false,
+      "properties": {
+        "maxActiveSessionsPerUser": {
+          "type": "integer"
+        },
+        "maxContentBytes": {
+          "type": "integer"
+        },
+        "maxOperations": {
+          "type": "integer"
+        },
+        "sessionTtlSeconds": {
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "logging": {
+      "additionalProperties": false,
+      "properties": {
+        "consoleFormat": {
+          "type": "string"
+        },
+        "file": {
+          "additionalProperties": false,
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            },
+            "errorPath": {
+              "type": "string"
+            },
+            "path": {
+              "type": "string"
+            },
+            "split": {
+              "type": "boolean"
+            }
+          },
+          "type": "object"
+        },
+        "level": {
+          "type": "string"
+        },
+        "traceRequest": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "mediawiki": {
+      "additionalProperties": false,
+      "properties": {
+        "apiUrl": {
+          "type": "string"
+        },
+        "maxlagSeconds": {
+          "type": "integer"
+        },
+        "pageCacheTtlSeconds": {
+          "type": "integer"
+        },
+        "publicOrigins": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "publicUrl": {
+          "type": "string"
+        },
+        "serviceBridge": {
+          "additionalProperties": false,
+          "properties": {
+            "keyId": {
+              "type": "string"
+            },
+            "secret": {
+              "type": "string",
+              "writeOnly": true
+            },
+            "secretEnv": {
+              "type": "string"
+            }
+          },
+          "type": "object"
+        },
+        "siteId": {
+          "type": "string"
+        },
+        "timeoutMs": {
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "results": {
+      "additionalProperties": false,
+      "properties": {
+        "defaultTextMaxBytes": {
+          "type": "integer"
+        },
+        "maxPreviewBytes": {
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "site": {
+      "additionalProperties": false,
+      "properties": {
+        "headerLink": {
+          "additionalProperties": false,
+          "properties": {
+            "label": {
+              "type": "string"
+            },
+            "url": {
+              "type": "string"
+            }
+          },
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "iconUrl": {
+          "default": "",
+          "type": "string"
+        },
+        "title": {
+          "default": "Isekai MCP Gateway",
+          "maxLength": 256,
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "uploads": {
+      "additionalProperties": false,
+      "properties": {
+        "allowedMimeTypes": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "maxActiveTicketsPerPrincipal": {
+          "type": "integer"
+        },
+        "maxFileBytes": {
+          "type": "integer"
+        },
+        "maxReservedBytesGlobal": {
+          "type": "integer"
+        },
+        "maxReservedBytesPerPrincipal": {
+          "type": "integer"
+        },
+        "resultRetentionSeconds": {
+          "type": "integer"
+        },
+        "stagedFileTtlSeconds": {
+          "type": "integer"
+        },
+        "tempPath": {
+          "type": "string"
+        },
+        "uploadTaskTtlSeconds": {
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    }
+  },
+  "title": "Gateway app configuration",
+  "type": "object",
+  "x-reload": true
+}

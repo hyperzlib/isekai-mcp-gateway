@@ -11,6 +11,7 @@ import (
 	"isekai-mcp-gateway/internal/config"
 	"isekai-mcp-gateway/internal/integrations/oidcclient"
 	"isekai-mcp-gateway/internal/outbound"
+	"isekai-mcp-gateway/internal/templates"
 )
 
 func TestAuthorizationPagePolicies(t *testing.T) {
@@ -98,5 +99,53 @@ func TestSitePresentationAndReload(t *testing.T) {
 	s.render(w, httptest.NewRequest("GET", "https://gateway.example/auth/login", nil), pageData{Mode: "login"})
 	if !strings.Contains(w.Header().Get("Content-Security-Policy"), "img-src 'self';") || !strings.Contains(w.Body.String(), "/assets/icon.svg?v=2") {
 		t.Fatal("root path icon handling")
+	}
+}
+
+func TestAvatarCSPAndFallback(t *testing.T) {
+	avatar := "https://sso.example/realms/isekai/avatar.png?private=1"
+	manager := new(outbound.Manager)
+	defer config.Publish(nil)
+	cfg := config.Defaults()
+	cfg.App.Auth.OidcClient.DefaultAvatar = "https://cdn.example/default-avatar.svg"
+	manager.Publish(&outbound.Bundle{Config: cfg, OidcClient: new(oidcclient.OidcConnect)})
+	s := &Service{Service: &application.Service{Upstream: manager}, Pages: testPages{template.Must(template.New("page").Parse("{{.AvatarURL}}"))}}
+	// 已登录且携带 IDP 头像：放行其来源。
+	w := httptest.NewRecorder()
+	s.render(w, httptest.NewRequest("GET", "https://gateway.example/auth/grants", nil), pageData{Mode: "grants", LoggedIn: true, Username: "U", AvatarURL: avatar})
+	csp := w.Header().Get("Content-Security-Policy")
+	if !strings.Contains(csp, "img-src 'self' https://sso.example") || strings.Contains(csp, "private") {
+		t.Fatalf("avatar CSP: %s", csp)
+	}
+	// 无头像时回退默认头像并放行其来源。
+	w = httptest.NewRecorder()
+	s.render(w, httptest.NewRequest("GET", "https://gateway.example/auth/grants", nil), pageData{Mode: "grants", LoggedIn: true, Username: "U"})
+	if !strings.Contains(w.Body.String(), "https://cdn.example/default-avatar.svg") || !strings.Contains(w.Header().Get("Content-Security-Policy"), "https://cdn.example") {
+		t.Fatalf("default avatar fallback: %s %s", w.Body.String(), w.Header().Get("Content-Security-Policy"))
+	}
+}
+
+func TestLoginBackToHome(t *testing.T) {
+	pages, err := templates.New(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := &Service{Pages: pages}
+	for _, tc := range []struct {
+		url, mode, interaction string
+		want                   bool
+	}{
+		{"https://example.test/auth/login?backto=home", "login", "", true},
+		{"https://example.test/auth/login?x=1&backto=home", "login", "", true},
+		{"https://example.test/auth/login", "login", "", false},
+		{"https://example.test/auth/login?backto=other", "login", "", false},
+		{"https://example.test/auth/login?backto=home", "login", "oauth", false},
+		{"https://example.test/auth/login?backto=home", "account", "", false},
+	} {
+		w := httptest.NewRecorder()
+		s.render(w, httptest.NewRequest("GET", tc.url, nil), pageData{Mode: tc.mode, Title: "登录", Interaction: tc.interaction})
+		if w.Code != 200 || strings.Contains(w.Body.String(), `aria-label="返回到主页"`) != tc.want {
+			t.Errorf("%s mode=%s interaction=%s: status=%d, want back=%v", tc.url, tc.mode, tc.interaction, w.Code, tc.want)
+		}
 	}
 }

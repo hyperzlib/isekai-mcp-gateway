@@ -38,13 +38,18 @@ func (s *Service) CompleteLogin(ctx context.Context, state, code, browser string
 	if err != nil {
 		return nil, loginError("login.consume", err)
 	}
+	// 登录事务已确定发起来源：错误页据此提供“重试”入口。
+	retry := "/auth/login"
+	if transaction.InteractionID != "" {
+		retry = "/auth/interaction/" + transaction.InteractionID
+	}
 	// 用户取消或缺少授权码时直接结束流程。
 	if denied || code == "" {
-		return nil, &FlowError{Message: "身份服务取消了登录，请重新发起。", Status: 400}
+		return nil, &FlowError{Message: "身份服务取消了登录，请重新发起。", Status: 400, Retry: retry}
 	}
 	var snap loginSnapshot
 	if err := json.Unmarshal(transaction.Snapshot, &snap); err != nil {
-		return nil, &FlowError{Message: "无法恢复登录配置。", Status: 500, Cause: failure.Wrap("login.snapshot", err)}
+		return nil, &FlowError{Message: "无法恢复登录配置。", Status: 500, Cause: failure.Wrap("login.snapshot", err), Retry: retry}
 	}
 	c := &config.Config{App: snap.App, Secrets: config.Secrets{OidcClientSecret: snap.OidcClientSecret, BridgeSecret: snap.BridgeSecret}}
 	// 限制整个上游登录调用的总时长，避免请求长时间挂起。
@@ -52,26 +57,28 @@ func (s *Service) CompleteLogin(ctx context.Context, state, code, browser string
 	defer cancel()
 	b, err := outbound.Build(ctx, c)
 	if err != nil {
-		return nil, loginError("login.discovery", err)
+		return nil, withRetry(loginError("login.discovery", err), retry)
 	}
-	subject, err := b.OidcClient.Authenticate(ctx, code, transaction.Verifier, transaction.Nonce)
+	result, err := b.OidcClient.Authenticate(ctx, code, transaction.Verifier, transaction.Nonce)
 	if err != nil {
-		return nil, loginError("login.authenticate", err)
+		return nil, withRetry(loginError("login.authenticate", err), retry)
 	}
-	identity, err := b.Bridge.Resolve(ctx, subject)
+	identity, err := b.Bridge.Resolve(ctx, result.Subject)
 	if err != nil {
 		// 身份服务返回的业务错误直接透传其错误码与说明。
 		var failure *domain.IdentityError
 		if errors.As(err, &failure) {
-			return nil, &FlowError{Code: failure.Code, Message: failure.Message, Status: 403, Cause: err}
+			return nil, &FlowError{Code: failure.Code, Message: failure.Message, Status: 403, Cause: err, Retry: retry}
 		}
-		return nil, loginError("login.identity", err)
+		return nil, withRetry(loginError("login.identity", err), retry)
 	}
+	// 头像属 IDP 侧资料，与身份快照一起落库。
+	identity.AvatarURL = result.AvatarURL
 	accountID, sessionID := "", security.Random()
 	err = s.Store.Database().WithContext(ctx).Transaction(func(tx Database) error {
 		// Stable digest avoids duplicate accounts when multiple callbacks race.
-		accountID = security.Hash(snap.App.Auth.OidcClient.Issuer + "\x00" + subject)
-		account := Account{ID: accountID, Issuer: snap.App.Auth.OidcClient.Issuer, Subject: subject, SiteID: snap.App.MediaWiki.SiteID, WikiUserID: identity.UserID, Username: identity.Username, DisplayName: identity.DisplayName}
+		accountID = security.Hash(snap.App.Auth.OidcClient.Issuer + "\x00" + result.Subject)
+		account := Account{ID: accountID, Issuer: snap.App.Auth.OidcClient.Issuer, Subject: result.Subject, SiteID: snap.App.MediaWiki.SiteID, WikiUserID: identity.UserID, Username: identity.Username, DisplayName: identity.DisplayName, AvatarURL: result.AvatarURL}
 		var previous Account
 		ar, e := s.Store.Get(tx, "accounts", accountID, &previous, true)
 		if e != nil && !errors.Is(e, ErrRecordNotFound) {
@@ -112,7 +119,7 @@ func (s *Service) CompleteLogin(ctx context.Context, state, code, browser string
 		return nil
 	})
 	if err != nil {
-		return nil, loginError("login.persist", err)
+		return nil, withRetry(loginError("login.persist", err), retry)
 	}
 
 	return &LoginResult{SessionID: sessionID, InteractionID: transaction.InteractionID}, nil
@@ -149,4 +156,13 @@ func loginError(op string, err error) error {
 		status = 502
 	}
 	return &FlowError{Code: f.Code, Message: f.Message, Status: status, Cause: f}
+}
+
+// withRetry 把登录事务的发起来源写入 FlowError，供错误页渲染“重试”按钮。
+func withRetry(err error, retry string) error {
+	var flow *FlowError
+	if errors.As(err, &flow) && retry != "" {
+		flow.Retry = retry
+	}
+	return err
 }

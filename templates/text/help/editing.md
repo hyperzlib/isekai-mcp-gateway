@@ -31,6 +31,21 @@ commit_edit 必须明确提供 ai_involvement，具体看 [AI标注](#AI标注) 
 
 如果本次编辑只涉及已有内容的整理、纠错或格式修改，不应因为页面编辑历史或上次提交时存在AI生成内容而提高标注等级，标注等级仅代表当前提交的版本。
 
+# 讨论与执行
+
+判断是否需要提交编辑，要看用户发送的是否是指向具体页面或具体变更的执行指令，不看prompt有没有出现“提交”“发布”“保存”这些词。
+
+- 讨论、设想、评估、征询（“如果要改……”“能不能删掉……”“你觉得怎么改更好”“我打算把 x 换成 y”）是讨论：
+  直接正常输出回答、新的内容、wikitext 片段或差异说明，不调用 begin_edit 和 commit_edit。可以显式提示用户：“需要将修改后的内容发布到网站上吗？”
+- 以祈使句给出目标和变更（“把这些页面里的 x 都删掉”“帮我把《测试页面》的标题改成 y”“把这段加到末尾”）
+  是执行指令：直接走 begin_edit → update_edit → preview_edit / get_edit_diff → commit_edit，
+  不要反问“需要我提交吗”，也不要因为用户没说“提交”而停在草稿。仅在不确定用户要修改本地还是网站上的内容时才提问
+- 不要在讨论阶段就 begin_edit：草稿有 expires_at
+  需要看渲染效果时可以 begin_edit + preview_edit + close_edit。
+- 不在从讨论转执行时（如：“发布这个设定”）再加一道确认。
+
+只有目标或范围有实质歧义时才先问，且问范围不问提交，例如“列的这 3 个页面都删，还是只删前两个”“x 在不同页面里指不同内容，按各自页面里的删除吗”。
+
 # apply_patch
 
 apply_patch 使用了一个略微修改版本的 V4A diff format。与原版不同之处在于不要包含文件头或其他 diff 指令，包括 `*** Update File:`、`*** Add File:`、`*** Delete File:`、`*** Move to:`、`*** End of File`、`diff --git`、`---` / `+++` 文件头、`@@ -1,3 +1,3 @@` 或 `\ No newline at end of file`。保留V4A格式所需的 `*** Begin Patch`、`*** End Patch`、`@@` 上下文定位及行首 `+`、`-`、空格标记。这里只禁止文件操作指令及标准unified diff格式。
@@ -77,3 +92,5 @@ MediaWiki Wikitext与Markdown不同，编辑时注意以下规则：
 如果用户要求将现有文档上传到本站，在用户没有另外要求下，默认仅将文档内容转换为 wikitext，不修改文档内容，并且标注为 ai_involvement=none 后提交。
 
 如果文档中有文件，先按 `wiki.help(uploads)` 的 prepare_upload → commit_upload 流程上传文件，拿到可在 wikitext 中引用的 `[[文件:名称]]`，把原文档里的图片链接替换为上传后的新链接，再提交页面内容。
+
+草稿会话的状态、可用操作和状态转换见 `wiki.help(draft-status)`。

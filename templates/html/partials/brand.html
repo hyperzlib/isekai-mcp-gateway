@@ -1,12 +1,12 @@
 {{ define "partials/brand" }}
     {{ if .ClientName }}
     <nav class="connect" aria-label="连接信息">
-      <div class="connect-end">
+      <a class="connect-end site-brand" href="/">
         <span class="connect-logo site">
           {{ if .SiteIconURL }}<img src="{{.SiteIconURL}}" alt="">{{ else }}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6"/></svg>{{ end }}
         </span>
         <span class="connect-label">{{.SiteTitle}}</span>
-      </div>
+      </a>
       <span class="connect-arrow" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h13"/><path d="m12 5 7 7-7 7"/></svg></span>
       <div class="connect-end">
         <span class="connect-logo app">
@@ -17,9 +17,9 @@
       </div>
     </nav>
     {{ else }}
-    <div class="brand">
+    <a class="brand" href="/">
       <span class="brand-mark" aria-hidden="true">{{ if .SiteIconURL }}<img src="{{.SiteIconURL}}" alt="">{{ else }}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21V8l8-5 8 5v13"/><path d="M9 21v-6h6v6"/></svg>{{ end }}</span>
       <span class="brand-name">{{.SiteTitle}}</span>
-    </div>
+    </a>
     {{ end }}
 {{ end }}

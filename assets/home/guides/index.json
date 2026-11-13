@@ -52,5 +52,11 @@
     "name": "VS Code",
     "icon": "/assets/icons/vscode.png",
     "guide": "vscode.md"
+  },
+  {
+    "id": "sk",
+    "name": "API Key 接入",
+    "icon": "/assets/icons/default-avatar.svg",
+    "guide": "sk.md"
   }
 ]

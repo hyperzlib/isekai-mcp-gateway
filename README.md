@@ -193,7 +193,7 @@ ServiceBridge 共享密钥需要在网关与 MediaWiki 两端填写相同的字�
 {{ define "content" }}<h1>{{ .Title }}</h1>{{ end }}
 ```
 
-帮助文件位于 `templates/text/help/*.md`。自定义提示词可放在 `templates/text/prompts/*.tmpl`，公共片段放在 `templates/text/partials/`；这些目录可以按需创建。
+`templates/text/discovery.md` 生成首页发现信息和 `/llms.txt`，可使用 `.SiteTitle`、`.SiteUrl`（不含结尾斜杠的公开首页地址）和 `.Endpoint`。帮助文件位于 `templates/text/help/*.md`。自定义提示词可放在 `templates/text/prompts/*.tmpl`，公共片段放在 `templates/text/partials/`；这些目录可以按需创建。
 文本文件递归加载 `.md` 和 `.tmpl`，通过 `RenderText` 使用相对于 text 的完整路径（保留扩展名）或显式定义名称。
 文件以相对路径命名，可使用 `{{ template "partials/rules.tmpl" . }}` 引用另一个文件。
 HTML 变量自动转义；文本变量保持原文；缺失的 map 字段返回错误。所有渲染成功后才输出内容。

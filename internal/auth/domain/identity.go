@@ -7,6 +7,8 @@ type Identity struct {
 	Username    string `json:"username"`
 	DisplayName string `json:"display_name"`
 	UserToken   string `json:"user_token"`
+	// AvatarURL 是 IDP 侧头像地址，属非凭据信息，按明文 payload 存储。
+	AvatarURL string `json:"avatar_url,omitempty"`
 }
 
 // IdentityError contains a controlled explanation, never upstream payloads.

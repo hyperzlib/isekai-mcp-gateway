@@ -1,0 +1,21 @@
+{{ define "partials/nav" }}
+{{if .LoggedIn}}
+<nav class="nav-user" aria-label="账号">
+  <details class="account-menu" data-account-menu>
+    <summary class="account-menu-trigger">
+      {{if .AvatarURL}}<img class="nav-avatar" src="{{.AvatarURL}}" alt="">{{else}}<span class="nav-avatar nav-fallback" aria-hidden="true">{{.Initial}}</span>{{end}}
+      <span class="nav-name">{{.Username}}</span>
+      <svg class="account-menu-chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 9 6 6 6-6"/></svg>
+    </summary>
+    <div class="account-menu-panel">
+      {{if .KeyEnabled}}<a href="/auth/apikeys"><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="16" cy="8" r="5"/><path d="M12.5 11.5 3 21v-3l2-2h2v-2h2l2-2"/></svg>API Keys</a>{{end}}
+      <a href="/auth/grants"><svg aria-hidden="true" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>已登录设备管理</a>
+      <form method="post" action="/auth/logout">
+        <input type="hidden" name="csrf_token" value="{{.CSRF}}">
+        <button type="submit"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></svg>退出登录</button>
+      </form>
+    </div>
+  </details>
+</nav>
+{{end}}
+{{end}}

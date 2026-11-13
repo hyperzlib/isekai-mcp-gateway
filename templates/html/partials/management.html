@@ -1,26 +1,26 @@
 {{ define "partials/management" }}
+    {{ template "partials/mgmttabs" . }}
     <section class="hero">
-      <span class="hero-icon icon-accent" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h11"/><path d="M8 12h11"/><path d="M8 18h11"/><path d="M4 6h.01"/><path d="M4 12h.01"/><path d="M4 18h.01"/></svg></span>
       <h1>{{.Title}}</h1>
       {{if .Username}}<p class="subtitle">账号：{{.Username}}</p>{{end}}
     </section>
+    {{ template "partials/removal-notice" . }}
     <details>
       <summary>关于授权</summary>
       <div class="details-body">
         <p>撤销后，这个应用会立即失去访问你账号的权限。仅退出登录或删除应用，不会自动取消这里的授权。</p>
       </div>
     </details>
-    <nav class="tabs">
-      <a href="/auth/grants">管理授权</a>
-      <a href="/auth/clients">已信任的应用</a>
-    </nav>
     <div class="entries">
       {{range .Entries}}
       <article class="entry">
-        <h2>{{.ClientName}}</h2>
-        {{if .Scope}}<p>{{.Scope}}</p>{{end}}
-        {{if .Expiry}}<p class="expiry">到期时间：{{.Expiry}}</p>{{end}}
-        <form method="post"><input type="hidden" name="csrf_token" value="{{$.CSRF}}"><input type="hidden" name="id" value="{{.ID}}"><button name="action" value="revoke" class="secondary">{{if eq $.Mode "clients"}}取消信任{{else}}撤销授权{{end}}</button></form>
+        <span class="entry-icon" aria-hidden="true"><svg viewBox="0 0 24 24">{{if eq $.Mode "clients"}}<rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M8 6.5h.01M11 6.5h.01"/>{{else}}<rect x="3" y="4" width="18" height="13" rx="2"/><path d="M8 21h8M12 17v4"/>{{end}}</svg></span>
+        <div class="entry-main">
+          <h2>{{.ClientName}}</h2>
+          {{if .Scope}}<p>{{.Scope}}</p>{{end}}
+          {{if .Expiry}}<p class="expiry">到期时间：{{.Expiry}}</p>{{end}}
+        </div>
+        <form method="post" data-confirm-name="{{.ClientName}}" data-confirm-title="{{if eq $.Mode "clients"}}取消信任{{else}}撤销授权{{end}}" data-confirm-message="{{if eq $.Mode "clients"}}取消信任后，该应用的全部授权也会被撤销。{{else}}撤销后，该应用将立即失去此授权。{{end}}"><input type="hidden" name="csrf_token" value="{{$.CSRF}}"><input type="hidden" name="id" value="{{.ID}}"><input type="hidden" name="notice_name" value="{{.ClientName}}"><button name="action" value="revoke" class="entry-delete"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 13h12l1-13M9 7V4h6v3"/></svg>{{if eq $.Mode "clients"}}取消信任{{else}}撤销授权{{end}}</button></form>
       </article>
       {{else}}<p class="empty">暂无记录。</p>{{end}}
     </div>

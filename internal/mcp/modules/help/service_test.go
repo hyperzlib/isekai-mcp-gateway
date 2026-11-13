@@ -15,7 +15,7 @@ func TestHelpUsingEmbeddedTextTemplates(t *testing.T) {
 		t.Fatal(err)
 	}
 	s := New(m)
-	for _, topic := range []string{"", "index", "connection", "authorization", "activity", "reading", "editing", "wikitext", "page-creation", "recovery", "moderation"} {
+	for _, topic := range []string{"", "index", "authorization", "activity", "reading", "editing", "draft-status", "wikitext", "page-creation", "recovery", "moderation"} {
 		got, err := s.Read(topic)
 		if err != nil {
 			t.Fatal(topic, err)
@@ -41,5 +41,8 @@ func TestHelpUsingEmbeddedTextTemplates(t *testing.T) {
 	}
 	if _, err := s.Read("../index"); err == nil {
 		t.Fatal("invalid topic accepted")
+	}
+	if _, err := s.Read("connection"); err == nil {
+		t.Fatal("removed connection topic accepted")
 	}
 }

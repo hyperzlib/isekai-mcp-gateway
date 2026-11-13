@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"isekai-mcp-gateway/internal/auth/domain"
 	"isekai-mcp-gateway/internal/failure"
 	"isekai-mcp-gateway/internal/persistence"
 )
@@ -72,5 +73,5 @@ func (s *Service) ValidateToken(ctx context.Context, raw string) (*Principal, er
 	if session.Identity.UserID <= 0 {
 		return nil, ErrInvalidToken
 	}
-	return &Principal{Issuer: s.Config.Static.Auth.Gateway.Issuer, AccountID: account.ID, OAuthClientID: g.ClientID, GrantID: g.ID, WikiUserID: session.Identity.UserID, Scopes: scopes, ExpiresAt: row.ExpiresAt}, nil
+	return &Principal{Issuer: s.Config.Static.Auth.Gateway.Issuer, AccountID: account.ID, OAuthClientID: g.ClientID, GrantID: g.ID, WikiUserID: session.Identity.UserID, Scopes: scopes, ExpiresAt: row.ExpiresAt, AuthKind: domain.AuthKindOAuth}, nil
 }

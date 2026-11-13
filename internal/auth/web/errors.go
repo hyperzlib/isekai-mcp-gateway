@@ -11,10 +11,10 @@ import (
 // flowError 向浏览器展示受控错误信息，并附带请求编号便于排查
 func (s *Service) flowError(w http.ResponseWriter, r *http.Request, err error) {
 	failure.Log(r.Context(), "auth.browser", err)
-	// 业务流程错误保留其状态码与文案
+	// 业务流程错误保留其状态码、文案与可重试入口
 	var flow *application.FlowError
 	if errors.As(err, &flow) {
-		s.pageErrorContext(r.Context(), w, flow.Message+errorReference(r), flow.Status)
+		s.pageErrorRetry(r, w, flow.Message+errorReference(r), flow.Status, flow.Retry)
 		return
 	}
 	f := failure.Describe(err)

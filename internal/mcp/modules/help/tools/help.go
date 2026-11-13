@@ -14,7 +14,7 @@ type Input struct {
 
 func Tool(a gatewaymcp.RequestAuthorizer, service Reader) gatewaymcp.Definition {
 	return gatewaymcp.Definition{Kind: "tool", Name: "wiki.help", Register: func(s *mcp.Server) {
-		mcp.AddTool(s, &mcp.Tool{Name: "wiki.help", Description: "Read Gateway help. Start with topic=index; available topics are connection, authorization, reading and editing.", Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true}},
+		mcp.AddTool(s, &mcp.Tool{Name: "wiki.help", Description: "Read Gateway help. Start with topic=index; available topics include authorization, reading and editing.", Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true}},
 			func(ctx context.Context, req *mcp.CallToolRequest, input Input) (*mcp.CallToolResult, Result, error) {
 				ctx = gatewaymcp.StartCall(ctx)
 				if err := a.CheckMCPRequest(ctx, req.Extra); err != nil {

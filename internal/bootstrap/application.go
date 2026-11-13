@@ -59,7 +59,12 @@ func assemble(c *config.Config, a *zitadel.Service, files *runtimefiles.Files, b
 		})
 	})
 	server := httpserver.New(c, protected,
-		&home.Service{Config: c, Pages: files.Templates, Site: func() (string, string) {
+		&home.Service{Config: c, Pages: files.Templates, Login: pages.LoginState, HeaderLink: func() *config.SiteHeaderLink {
+			if bundle := a.Upstream.Get(); bundle != nil && bundle.Config != nil {
+				return bundle.Config.App.Site.HeaderLink
+			}
+			return c.App.Site.HeaderLink
+		}, Site: func() (string, string) {
 			if bundle := a.Upstream.Get(); bundle != nil && bundle.Config != nil {
 				return bundle.Config.App.Site.Title, bundle.Config.App.Site.IconURL
 			}

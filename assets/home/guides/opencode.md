@@ -2,14 +2,15 @@
 2. 运行授权命令，在浏览器中登录本站并确认权限。
 3. 回到 OpenCode，把 Wiki 相关任务交给它即可。
 
-```json title="opencode.json"
+```json title="opencode.jsonc"
 {
   "$schema": "https://opencode.ai/config.json",
   "mcp": {
-    "isekai": {
-      "enabled": true,
-      "type": "remote",
-      "url": {{mcp_url_json}}
+    "servers": {
+      "isekai": {
+        "type": "remote",
+        "url": {{mcp_url_json}}
+      }
     }
   }
 }
@@ -20,17 +21,16 @@ opencode mcp auth isekai
 opencode mcp list
 ```
 
-::: details 用的是 OpenCode 新版（V2 配置格式）？
+::: details 使用的是 OpenCode 旧版（V1 配置格式）？
 
-```json title="opencode.jsonc"
+```json title="opencode.json"
 {
   "$schema": "https://opencode.ai/config.json",
   "mcp": {
-    "servers": {
-      "isekai": {
-        "type": "remote",
-        "url": {{mcp_url_json}}
-      }
+    "isekai": {
+      "enabled": true,
+      "type": "remote",
+      "url": {{mcp_url_json}}
     }
   }
 }

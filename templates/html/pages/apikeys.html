@@ -1,0 +1,86 @@
+{{ template "layout/base" . }}
+{{ define "content" }}
+    {{ if .CreatedKey }}
+    <section class="hero">
+      <h1>API Key 已创建</h1>
+      <p class="subtitle">「{{.CreatedName}}」创建成功，请立即复制保存</p>
+    </section>
+    <div class="key-result">
+      <p class="key-warning">API Key 在关闭此页面后将无法再次查看。</p>
+      <div class="key-copy-row">
+        <code class="key-value" id="created-api-key">{{.CreatedKey}}</code>
+        <button type="button" class="secondary key-copy" data-copy-key="created-api-key" aria-label="复制 API Key" title="复制 API Key"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="4" width="12" height="16" rx="2"/><path d="M16 4.5V3H8v2M5 8H4v12a2 2 0 0 0 2 2h10v-2"/></svg></button>
+      </div>
+      <p class="key-copy-status" role="status" aria-live="polite"></p>
+      <a class="key-return" href="/auth/apikeys">返回 API Key 列表</a>
+    </div>
+    {{ else }}
+    {{ template "partials/mgmttabs" . }}
+    <section class="hero">
+      <div class="hero-row">
+        <div class="hero-text">
+          <h1>{{.Title}}</h1>
+          <p class="subtitle">用于不支持 OAuth 的客户端，可以在配置文件中添加 API Key Header 连接到你的账号。</p>
+        </div>
+        <button type="button" class="hero-action" data-open-dialog="apikey-dialog">添加 API Key</button>
+      </div>
+    </section>
+    {{ template "partials/removal-notice" . }}
+    <div class="entry key-created">
+      <div class="entry-main">
+        <p>创建后请把 sk- 开头的 API Key 放入 MCP 配置中的 Header 配置中，格式为 <code>X-API-Key: sk-xxx</code> 或 <code>Authorization: Bearer sk-xxx</code>。</p>
+        <p>如果不知道怎么操作，也可以将这段内容和 API Key 交给 Agent，让它自己添加。</p>
+      </div>
+    </div>
+    <div class="entries">
+      {{range .APIKeys}}
+      <article class="entry">
+        <span class="entry-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="16" cy="8" r="5"/><path d="M12.5 11.5 3 21v-3l2-2h2v-2h2l2-2"/></svg></span>
+        <div class="entry-main">
+          <h2>{{.Name}}{{if eq .Status "revoked"}}<span class="trust-tag trust-unknown">已吊销</span>{{end}}</h2>
+          <p>{{.Scope}}</p>
+          <p class="expiry">创建：{{.CreatedAt}} · 到期：{{.ExpiresAt}}</p>
+        </div>
+        {{if eq .Status "active"}}<form method="post" data-confirm-name="{{.Name}}" data-confirm-title="删除 API Key" data-confirm-message="删除后，此 API Key 将立即失效。"><input type="hidden" name="csrf_token" value="{{$.CSRF}}"><input type="hidden" name="action" value="delete"><input type="hidden" name="id" value="{{.ID}}"><input type="hidden" name="notice_name" value="{{.Name}}"><button type="submit" class="entry-delete"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M5 7l1 13h12l1-13M9 7V4h6v3"/></svg>删除</button></form>{{end}}
+      </article>
+      {{else}}<div class="empty key-empty"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="16" cy="8" r="5"/><path d="M12.5 11.5 3 21v-3l2-2h2v-2h2l2-2"/><circle cx="17.5" cy="6.5" r=".7" fill="currentColor" stroke="none"/></svg><p>暂无 API Key。</p></div>{{end}}
+    </div>
+    <dialog class="modal" id="apikey-dialog" aria-labelledby="apikey-dialog-title">
+      <form method="post" id="apikey-create" x-data="apiKeyForm" x-init="init" @submit="validate" data-max-ttl="{{.MaxTTLSeconds}}">
+        <input type="hidden" name="csrf_token" value="{{.CSRF}}">
+        <input type="hidden" name="action" value="create">
+        <header class="modal-head">
+          <h2 id="apikey-dialog-title">添加 API Key</h2>
+          <button type="button" class="modal-close" data-close-dialog aria-label="关闭">✕</button>
+        </header>
+        <div class="modal-body">
+        <label class="field" for="apikey-name">名称</label>
+        <input id="apikey-name" name="name" maxlength="64" required placeholder="例如：我的桌面助手" aria-describedby="key-name-error">
+        <p class="field-error" id="key-name-error" x-text="nameError" aria-live="polite"></p>
+        <p class="field-label">权限</p>
+        <div class="scopes">
+          {{range .Scopes}}
+          <div class="scope">
+            <label class="scope-main"><input type="checkbox" name="scope" value="{{.Name}}"{{if or .Checked .Force}} checked{{end}}{{if .Force}} disabled{{end}}><span class="scope-label">{{.Label}}</span></label>
+            {{if .Description}}<span class="info" tabindex="0" role="note" data-tip="{{.Description}}" aria-label="{{.Description}}">i</span>{{end}}
+          </div>
+          {{end}}
+        </div>
+        <p class="field-label">有效期</p>
+        <p class="field-error" id="key-expiry-error" x-text="expiryError" aria-live="polite"></p>
+        <div class="scopes">
+          {{range .TTLOptions}}
+          <div class="scope"><label class="scope-main"><input type="radio" name="expiry" value="{{.Value}}"{{if .Disabled}} disabled{{end}}><span class="scope-label">{{.Name}}</span></label></div>
+          {{end}}
+          <div class="scope"><label class="scope-main"><input type="radio" name="expiry" value="custom"><span class="scope-label">自定义日期</span></label><input class="key-date" type="date" name="customDate"></div>
+          {{if .AllowPermanent}}<div class="scope"><label class="scope-main"><input type="radio" name="expiry" value="permanent"><span class="scope-label">永久有效</span></label></div>{{end}}
+        </div>
+        <div class="actions modal-actions">
+          <button type="submit">创建 API Key</button>
+          <button type="button" class="secondary" data-close-dialog>取消</button>
+        </div>
+        </div>
+      </form>
+    </dialog>
+    {{ end }}
+{{ end }}

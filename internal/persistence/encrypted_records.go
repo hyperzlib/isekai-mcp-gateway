@@ -10,7 +10,7 @@ import (
 	"isekai-mcp-gateway/internal/security"
 )
 
-var Tables = []string{"clients", "accounts", "sessions", "interactions", "login_transactions", "client_trusts", "grants", "authorization_codes", "access_tokens", "refresh_tokens"}
+var Tables = []string{"clients", "accounts", "sessions", "interactions", "login_transactions", "client_trusts", "grants", "authorization_codes", "access_tokens", "refresh_tokens", "api_keys"}
 
 // Query metadata and business JSON are plaintext. Credentials are stored in
 // a separate AEAD payload bound to the table, lookup hash and format version.

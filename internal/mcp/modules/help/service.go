@@ -25,8 +25,8 @@ func (s *Service) Read(topic string) (domain.Result, error) {
 	// 展示清单仅列出已启用的扩展，保持关闭时无专属残留。
 	cfg := config.GetConfig()
 	topics := []string{
-		"index", "connection", "authorization", "reading",
-		"activity", "editing", "wikitext", "page-creation", "patch", "recovery",
+		"index", "authorization", "reading",
+		"activity", "editing", "draft-status", "wikitext", "page-creation", "patch", "recovery",
 		"confirmation", "uploads", "moderation", "default-writing-style",
 	}
 	visible := topics

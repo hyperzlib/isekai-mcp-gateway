@@ -1,4 +1,4 @@
-package templates
+﻿package templates
 
 import (
 	"bytes"
@@ -47,7 +47,7 @@ func TestSourcesAndBuiltins(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	data := map[string]any{"Title": "<script>", "Mode": "error", "Message": "&message", "SiteTitle": "", "SiteIconURL": "", "ClientName": "", "ClientLogo": "", "TrustLevel": ""}
+	data := map[string]any{"Title": "<script>", "Mode": "error", "Message": "&message", "SiteTitle": "", "SiteIconURL": "", "ClientName": "", "ClientLogo": "", "TrustLevel": "", "LoggedIn": false, "KeyEnabled": false, "Wide": false, "RetryURL": "", "Username": "", "AvatarURL": "", "Initial": "", "CSRF": "", "ReturnTo": ""}
 	if got := render(t, m, "error", data); !strings.Contains(got, "&lt;script&gt;") || !strings.Contains(got, "&amp;message") {
 		t.Fatal(got)
 	}
@@ -156,7 +156,7 @@ func TestWatchLifecycleAndConcurrentRendering(t *testing.T) {
 					return
 				}
 				out.Reset()
-				if err := m.RenderHTML(&out, "error", map[string]any{"Title": "test", "Message": "test", "SiteTitle": "", "SiteIconURL": "", "ClientName": "", "ClientLogo": "", "TrustLevel": ""}); err != nil {
+				if err := m.RenderHTML(&out, "error", map[string]any{"Title": "test", "Message": "test", "SiteTitle": "", "SiteIconURL": "", "ClientName": "", "ClientLogo": "", "TrustLevel": "", "LoggedIn": false, "KeyEnabled": false, "Wide": false, "RetryURL": "", "Username": "", "AvatarURL": "", "Initial": "", "CSRF": "", "ReturnTo": ""}); err != nil {
 					t.Error(err)
 					return
 				}
@@ -261,3 +261,4 @@ func TestWatchMissingAndEmbeddedDirectory(t *testing.T) {
 	}
 	t.Fatal("directory appearing from embedded mode was not loaded")
 }
+
