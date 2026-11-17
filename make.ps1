@@ -1,13 +1,15 @@
-[CmdletBinding()]
+﻿[CmdletBinding()]
 param(
     [Parameter(Mandatory = $true, Position = 0)]
-    [ValidatePattern('^[a-z0-9]+-[a-z0-9]+$')]
+    [ValidatePattern('^[a-z0-9]+-[a-z0-9]+(/[a-z0-9]+)?$')]
     [string]$Target
 )
 
 $ErrorActionPreference = 'Stop'
 $Target = $Target.ToLowerInvariant()
-$parts = $Target.Split('-')
+# 解析 "<goos>-<goarch>[/<微架构级别>]"，例如 linux-amd64 或 linux-amd64/v3
+$parts = $Target -split '[/-]'
+$micro = if ($parts.Count -ge 3) { $parts[2] } else { $null }
 
 # Validate the pair against the installed Go toolchain.
 $supportedTargets = @(& go tool dist list)
@@ -17,9 +19,17 @@ if ($LASTEXITCODE -ne 0) {
 if ($supportedTargets -notcontains "$($parts[0])/$($parts[1])") {
     throw "Unsupported Go target: $Target. Use a pair from 'go tool dist list'."
 }
+if ($micro) {
+    if ($parts[1] -ne 'amd64') {
+        throw "Microarchitecture level '$micro' only applies to amd64 targets."
+    }
+    if ($micro -notmatch '^v[1-4]$') {
+        throw "Unsupported amd64 microarchitecture level: $micro. Use v1, v2, v3 or v4."
+    }
+}
 
 $savedEnvironment = @{}
-foreach ($name in @('GOOS', 'GOARCH', 'CGO_ENABLED')) {
+foreach ($name in @('GOOS', 'GOARCH', 'CGO_ENABLED', 'GOAMD64')) {
     $savedEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
 }
 
@@ -28,6 +38,11 @@ try {
     $env:GOOS = $parts[0]
     $env:GOARCH = $parts[1]
     $env:CGO_ENABLED = '0'
+    if ($micro) {
+        $env:GOAMD64 = $micro
+    } else {
+        Remove-Item Env:GOAMD64 -ErrorAction SilentlyContinue
+    }
 
     $outputDirectory = Join-Path $PSScriptRoot "bin/$Target"
     New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null

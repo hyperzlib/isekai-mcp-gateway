@@ -1,5 +1,11 @@
 [
   {
+    "id": "deepseek-harness",
+    "name": "DeepSeek Harness",
+    "icon": "/assets/icons/deepseek-harness.png",
+    "guide": "deepseek-harness.md"
+  },
+  {
     "id": "cherry-studio",
     "name": "Cherry Studio",
     "icon": "/assets/icons/cherry-studio.png",
@@ -48,15 +54,15 @@
     "guide": "cursor.md"
   },
   {
+    "id": "trae",
+    "name": "TRAE",
+    "icon": "/assets/icons/trae.png",
+    "guide": "trae.md"
+  },
+  {
     "id": "vscode",
     "name": "VS Code",
     "icon": "/assets/icons/vscode.png",
     "guide": "vscode.md"
-  },
-  {
-    "id": "sk",
-    "name": "API Key 接入",
-    "icon": "/assets/icons/default-avatar.svg",
-    "guide": "sk.md"
   }
 ]

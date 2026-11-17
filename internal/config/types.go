@@ -65,7 +65,7 @@ type Gateway struct {
 		IdleTTL    int      `json:"idleClientTtlSeconds"`
 	} `json:"registration"`
 	APIKeys APIKeys `json:"apiKeys"`
-	Fetch struct {
+	Fetch   struct {
 		TimeoutMS    int   `json:"timeoutMs"`
 		MaxBytes     int64 `json:"maxBytes"`
 		MaxRedirects int   `json:"maxRedirects"`
@@ -92,7 +92,10 @@ type ServerFile struct {
 	Schema  string `json:"$schema,omitempty"`
 	Version int    `json:"configVersion"`
 	Server  Server `json:"server"`
-	Auth    struct {
+	Admin   struct {
+		Subs []string `json:"subs"`
+	} `json:"admin"`
+	Auth struct {
 		Gateway Gateway `json:"gateway"`
 	} `json:"auth"`
 	Storage    Storage `json:"storage"`

@@ -129,6 +129,8 @@ Windows 文件权限由目录 ACL 决定；部署时限制服务配置目录的�
 `siteId` 改动要求重启，避免已有授权的 Wiki 身份跨站点混用。
 `server.json`、Gateway 授权密钥、存储与插件设置要求重启。
 
+`server.json` 的 `admin.subs` 是上游 OIDC 管理员的 subject 字符串数组，例如 `"admin": { "subs": ["user-sub-1", "user-sub-2"] }`。空数组表示没有配置管理员。配置中的管理员由服务器配置管理，不能在将来的管理页面中删除。
+
 - `/health/live`：listener 存活。
 - `/health/ready`：初始上游配置已探测成功且数据库可用；不代表每个上游此刻均可访问。
 - `gateway write-schema`：从 Go 配置类型生成两个 JSON Schema。

@@ -19,7 +19,7 @@ func TestGuideResourcesAndLiveExternalUpdates(t *testing.T) {
 	var clients []struct{ ID, Name, Icon, Guide string }
 	w := httptest.NewRecorder()
 	s.Handler().ServeHTTP(w, httptest.NewRequest("GET", "/assets/home/guides/index.json", nil))
-	if w.Code != 200 || w.Header().Get("Cache-Control") != "no-cache" || json.Unmarshal(w.Body.Bytes(), &clients) != nil || len(clients) != 10 {
+	if w.Code != 200 || w.Header().Get("Cache-Control") != "no-cache" || json.Unmarshal(w.Body.Bytes(), &clients) != nil || len(clients) != 11 {
 		t.Fatalf("invalid guide index: %d %s", w.Code, w.Body.String())
 	}
 	paths := []string{"/assets/home/vendor/markdown-it.min.js", "/assets/home/vendor/markdown-it-container.min.js", "/assets/home/vendor/purify.min.js", "/assets/home/guide-renderer.js"}

@@ -4,6 +4,7 @@ func Defaults() *Config {
 	c := &Config{}
 	c.App.Site.Title = DefaultSiteTitle
 	c.Static.Version, c.App.Version = 1, 1
+	c.Static.Admin.Subs = []string{}
 	c.Static.Server = Server{Host: "127.0.0.1", Port: 3000, RequestBodyMaxBytes: 2097152}
 	g := &c.Static.Auth.Gateway
 	g.AccessTokenFormat = "opaque"

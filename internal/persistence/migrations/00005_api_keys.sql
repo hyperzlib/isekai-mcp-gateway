@@ -8,7 +8,7 @@ CREATE TABLE oauth_api_keys (
   state VARCHAR(24) NOT NULL DEFAULT '',
   expires_at DATETIME(6) NOT NULL,
   updated_at DATETIME(6) NOT NULL,
-  payload LONGBLOB NOT NULL,
+  payload JSON NOT NULL,
   encrypted_payload LONGBLOB NULL,
   INDEX idx_account_state (account_id, state),
   INDEX idx_expiry (expires_at)

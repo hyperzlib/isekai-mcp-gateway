@@ -1,6 +1,9 @@
 {
   "$schema": "../docs/gateway-config.server.schema.json",
   "configVersion": 1,
+  "admin": {
+    "subs": []
+  },
   "server": {
     "host": "127.0.0.1",
     "port": 3000,

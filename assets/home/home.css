@@ -616,5 +616,5 @@
 
 .home-page .home-nav .account-menu-panel a { display: flex; align-items: center; gap: 10px; }
 
-.home-page .home-header-link { padding: 6px 10px; color: var(--text-muted); border-radius: 8px; font-size: .9rem; font-weight: 500; text-decoration: none; overflow-wrap: anywhere; }
+.home-page .home-header-link { padding: 6px 10px; color: var(--text-muted); border-radius: 8px; font-size: .9rem; font-weight: 600; text-decoration: none; overflow-wrap: anywhere; }
 .home-page .home-header-link:hover { color: var(--text); background: var(--surface); }

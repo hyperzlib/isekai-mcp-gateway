@@ -5,6 +5,18 @@
     "$schema": {
       "type": "string"
     },
+    "admin": {
+      "additionalProperties": false,
+      "properties": {
+        "subs": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
     "auth": {
       "additionalProperties": false,
       "properties": {
